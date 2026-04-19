@@ -48,7 +48,7 @@ jobs:
           payload = {
             "username": display_name,
             "avatar_url": f"https://github.com/{actor}.png",
-            "content": f"{body}\n\n— [{display_name}](https://github.com/{actor}) on [{repo}/{branch}](https://github.com/{repo}/tree/{branch})"
+            "content": f"{body}\n\n- [{display_name}](<https://github.com/{actor}>) on [{repo_name}/{branch}](<https://github.com/{repo}/tree/{branch}>)"
           }
 
           data = json.dumps(payload).encode("utf-8")
