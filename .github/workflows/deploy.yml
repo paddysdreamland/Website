@@ -29,10 +29,26 @@ jobs:
           branch = "${{ github.ref_name }}"
           actor = "${{ github.actor }}"
 
+          # Split summary and description
+          parts = message.split("\n", 1)
+          body = parts[1].strip() if len(parts) > 1 else parts[0].strip()
+
+          # Fetch GitHub display name
+          req = urllib.request.Request(
+            f"https://api.github.com/users/{actor}",
+            headers={
+              "User-Agent": "DiscordBot (https://github.com, 1.0)",
+              "Accept": "application/vnd.github+json"
+            }
+          )
+          with urllib.request.urlopen(req) as res:
+            user_data = json.loads(res.read())
+          display_name = user_data.get("name") or actor
+
           payload = {
-            "username": actor,
+            "username": display_name,
             "avatar_url": f"https://github.com/{actor}.png",
-            "content": f"**[{repo}:{branch}]**\n{message}"
+            "content": f"{body}\n\n— [{display_name}](https://github.com/{actor}) on [{repo}/{branch}](https://github.com/{repo}/tree/{branch})"
           }
 
           data = json.dumps(payload).encode("utf-8")
