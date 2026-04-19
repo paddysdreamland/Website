@@ -24,6 +24,8 @@ jobs:
           python3 << 'EOF'
           import os, json, urllib.request
 
+          print("Webhook URL:", os.environ.get("DISCORD_WEBHOOK", "NOT FOUND"))
+
           message = """${{ github.event.commits[0].message }}"""
           repo = "${{ github.repository }}"
           branch = "${{ github.ref_name }}"
