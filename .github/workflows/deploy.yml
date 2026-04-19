@@ -24,8 +24,6 @@ jobs:
           python3 << 'EOF'
           import os, json, urllib.request
 
-          print("Webhook URL:", os.environ.get("DISCORD_WEBHOOK", "NOT FOUND"))
-
           message = """${{ github.event.commits[0].message }}"""
           repo = "${{ github.repository }}"
           branch = "${{ github.ref_name }}"
@@ -39,9 +37,12 @@ jobs:
 
           data = json.dumps(payload).encode("utf-8")
           req = urllib.request.Request(
-            os.environ["DISCORD_WEBHOOK"],
+            os.environ["DISCORD_WEBHOOK"] + "?wait=true",
             data=data,
-            headers={"Content-Type": "application/json"},
+            headers={
+              "Content-Type": "application/json",
+              "User-Agent": "DiscordBot (https://github.com, 1.0)"
+            },
             method="POST"
           )
           urllib.request.urlopen(req)
