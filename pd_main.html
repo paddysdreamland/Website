@@ -8,9 +8,7 @@
         <link rel="manifest" href="/manifest.json">
 
         <link rel="preload" href="images/icon_96.png" as="image">
-        <link rel="preload" href="images/showcase/character_paddy_draw.png" as="image">
         <link rel="preload" href="images/showcase/character_paddy_draw_hover.png" as="image">
-        <link rel="preload" href="images/showcase/character_aria_astral.png" as="image">
         <link rel="preload" href="images/showcase/character_aria_astral_hover.png" as="image">
 
         <link rel="stylesheet" href="css/pd_main.css">
@@ -29,6 +27,7 @@
         <script src="js/pd_customization.js" defer></script>
         <script src="js/pd_skybox.js"></script>
 
+        <!-- What even is the point of this? -->
         <script type="application/ld+json">
             {
                 "@context": "https://schema.org",
@@ -62,14 +61,14 @@
     </head>
 
     <body>
-        <div class="env-viewport" style="perspective: 400px;">
-            <div class="env-skybox" style="transform: translate3d(-50%, -50%, 400px) rotateX(0deg) rotateY(0deg);">
-                <div class="skybox-ft" style="background-image: url(images/skybox/se_test1.png);"></div>
-                <div class="skybox-bk" style="background-image: url(images/skybox/se_test1.png);"></div>
-                <div class="skybox-lf" style="background-image: url(images/skybox/se_test1.png);"></div>
-                <div class="skybox-rt" style="background-image: url(images/skybox/se_test1.png);"></div>
-                <div class="skybox-up" style="background-image: url(images/skybox/se_test1.png);"></div>
-                <div class="skybox-dn" style="background-image: url(images/skybox/se_test1.png);"></div>
+        <div class="env-viewport">
+            <div class="env-skybox">
+                <div class="skybox-ft"></div>
+                <div class="skybox-bk"></div>
+                <div class="skybox-lf"></div>
+                <div class="skybox-rt"></div>
+                <div class="skybox-up"></div>
+                <div class="skybox-dn"></div>
             </div>
         </div>
 
@@ -702,7 +701,7 @@
             </main>
 
             <footer id="footer-holder">
-                <div class="footer-text-left">Made by Drawing Pad for Paddy's Dreamland™</div>
+                <div class="footer-text-left">Made by Paddy-V for Paddy's Dreamland™</div>
                 <div id="last-update" class="footer-text-right">Last updated: N/A</div>
                 <div class="footer-logo"></div>
             </footer>

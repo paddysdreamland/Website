@@ -1,16 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
-
     <head>
-
-        <title>Paddy's Dreamland</title>
+        <title>Paddy's Dreamland™</title>
 
         <link rel="icon" type="image/x-icon" href="images/app_icon_16.png">
         <link rel="canonical" href="https://www.paddysdreamland.com">
         <link rel="manifest" href="/manifest.json">
 
+        <link rel="preload" href="images/icon_96.png" as="image">
+        <link rel="preload" href="images/showcase/character_paddy_draw_hover.png" as="image">
+        <link rel="preload" href="images/showcase/character_aria_astral_hover.png" as="image">
+
         <link rel="stylesheet" href="css/pd_main.css">
         <link rel="stylesheet" href="css/pd_environment.css">
+
+        <script src="js/pd_default.js" defer></script>
+        <script src="js/pd_auto.js" defer></script>
+        <script src="js/pd_loadingscreen.js" defer></script>
+
+        <script src="js/pd_music.js" defer></script>
+        <script src="js/pd_music_playlist.js" defer></script>
+
+        <script src="js/pd_post_storage.js"></script>
+        <script src="js/pd_post_manager.js"></script>
+
+        <script src="js/pd_customization.js" defer></script>
+        <script src="js/pd_skybox.js"></script>
+
+        <!-- What even is the point of this? -->
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                "name": "Paddy's Dreamland™",
+                "url": "https://www.paddysdreamland.com",
+                "logo": "https://www.paddysdreamland.com/images/app_icon_512.png"
+            }
+        </script>
 
         <meta charset="UTF-8">
         
@@ -18,18 +44,18 @@
         <meta name="description" content="Game development and services.">
         <meta name="keywords" content="Development, Services, Gaming, Personal, Community">
         <meta name="author" content="Drawing Pad">
-        <meta name="theme-color" content="#00C0FF">
-        <meta name="robots" content="index, nofollow">
+        <meta name="theme-color" content="#5CC0A0">
+        <meta name="robots" content="index, follow">
 
-        <meta name="twitter:title" content="Paddy's Dreamland &mdash; Hiatus">
-        <meta name="twitter:description" content="Project showcases, news, information, and most importantly, Paddy's dreamland and home.">
-        <meta name="twitter:image" content="https://www.paddysdreamland.com/images/embeds/banner2.png">
+        <meta name="twitter:title" content="Paddy's Dreamland™ — Chat, is this real?">
+        <meta name="twitter:description" content="Project showcases, news, information, and most importantly, Paddy's Dreamland and home.">
+        <meta name="twitter:image" content="https://www.paddysdreamland.com/images/embeds/banner6.png">
         <meta name="twitter:card" content="summary_large_image">
 
-        <meta property="og:title" content="Paddy's Dreamland &mdash; Hiatus">
-        <meta property="og:description" content="Project showcases, news, information, and most importantly, Paddy's dreamland and home.">
-        <meta property="og:image" content="https://www.paddysdreamland.com/images/embeds/banner2.png">
-        <meta property="og:site_name" content="Paddy's Dreamland">
+        <meta property="og:title" content="Paddy's Dreamland™ — Chat, is this real?">
+        <meta property="og:description" content="Project showcases, news, information, and most importantly, Paddy's Dreamland and home.">
+        <meta property="og:image" content="https://www.paddysdreamland.com/images/embeds/banner6.png">
+        <meta property="og:site_name" content="Paddy's Dreamland™">
         <meta property="og:url" content="https://www.paddysdreamland.com">
         <meta property="og:type" content="website">
 
@@ -54,18 +80,14 @@
                 font-size: 24px;
             }
         </style>
-
     </head>
 
     <body>
-        
         <div class="centered">
             <p class="centered-text">Everything is outdated.</p>
             <p class="centered-text">Things need to be reworked.</p>
             <p class="centered-text">But the motivation is lacking.</p>
             <p class="centered-text">Bare with me.</p>
         </div>
-
     </body>
-
 </html>
