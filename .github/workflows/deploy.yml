@@ -26,6 +26,7 @@ jobs:
 
           message = """${{ github.event.commits[0].message }}"""
           repo = "${{ github.repository }}"
+          repo_name = repo.split("/")[1]
           branch = "${{ github.ref_name }}"
           actor = "${{ github.actor }}"
 
