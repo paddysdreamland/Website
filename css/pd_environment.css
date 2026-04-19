@@ -1,0 +1,93 @@
+:root {
+  --env-skybox-size: 1024;
+  --env-skybox-res: calc(1024px + 2px);
+  --env-skybox-tex: url("../images/skybox/se_test1.png");
+}
+
+.env-viewport {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  transform-style: preserve-3d;
+  overflow: hidden;
+}
+
+.env-skybox {
+  width: 1024px;
+  height: 1024px;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate3d(-50%, -50%, 400px);
+  transform-style: preserve-3d;
+  z-index: -50;
+  /*transition: 0.1s;*/
+}
+
+.skybox-ft {
+  background-size: 600%;
+  background-position: 0px 0px;
+  width: var(--env-skybox-res);
+  height: var(--env-skybox-res);
+  position: absolute;
+  transform: translateX(0px) translateY(0px) translateZ(-512px) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+}
+
+.skybox-bk {
+  background-size: 600%;
+  background-position: -100% 0px;
+  width: var(--env-skybox-res);
+  height: var(--env-skybox-res);
+  position: absolute;
+  transform: translateX(0px) translateY(0px) translateZ(512px) rotateX(0deg) rotateY(180deg) rotateZ(0deg);
+}
+
+.skybox-lf {
+  background-size: 600%;
+  background-position: -40% 0px;
+  width: var(--env-skybox-res);
+  height: var(--env-skybox-res);
+  position: absolute;
+  transform: translateX(512px) translateY(0px) translateZ(0px) rotateX(0deg) rotateY(-90deg) rotateZ(0deg);
+}
+
+.skybox-rt {
+  background-size: 600%;
+  background-position: -20% 0px;
+  width: var(--env-skybox-res);
+  height: var(--env-skybox-res);
+  position: absolute;
+  transform: translateX(-512px) translateY(0px) translateZ(0px) rotateX(0deg) rotateY(90deg) rotateZ(0deg);
+}
+
+.skybox-up {
+  background-size: 600%;
+  background-position: -80% 0px;
+  width: var(--env-skybox-res);
+  height: var(--env-skybox-res);
+  position: absolute;
+  transform: translateX(0px) translateY(-512px) translateZ(0px) rotateX(-90deg) rotateY(0deg) rotateZ(0deg);
+}
+
+.skybox-dn {
+  background-size: 600%;
+  background-position: -60% 0px;
+  width: var(--env-skybox-res);
+  height: var(--env-skybox-res);
+  position: absolute;
+  transform: translateX(0px) translateY(512px) translateZ(0px) rotateX(90deg) rotateY(0deg) rotateZ(0deg);
+}
+
+.env-floor {
+  background-image: url(../images/environments/concretefloor016a.png);
+  background-size: 128px;
+  background-position: center;
+  width: 256px;
+  height: 256px;
+  position: absolute;
+  left: 0%;
+  top: 0%;
+  transform: translateX(0px) translateY(64px) translateZ(0px) rotateX(90deg) rotateY(0deg) rotateZ(0deg);
+}

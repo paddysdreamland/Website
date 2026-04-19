@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Paddy's Dreamland™</title>
+
+        <link rel="icon" type="image/x-icon" href="images/app_icon_16.png">
+        <link rel="canonical" href="https://www.paddysdreamland.com">
+        <link rel="manifest" href="/manifest.json">
+
+        <link rel="preload" href="images/icon_96.png" as="image">
+        <link rel="preload" href="images/showcase/character_paddy_draw.png" as="image">
+        <link rel="preload" href="images/showcase/character_paddy_draw_hover.png" as="image">
+        <link rel="preload" href="images/showcase/character_aria_astral.png" as="image">
+        <link rel="preload" href="images/showcase/character_aria_astral_hover.png" as="image">
+
+        <link rel="stylesheet" href="css/pd_main.css">
+        <link rel="stylesheet" href="css/pd_environment.css">
+
+        <script src="js/pd_default.js" defer></script>
+        <script src="js/pd_auto.js" defer></script>
+        <script src="js/pd_loadingscreen.js" defer></script>
+
+        <script src="js/pd_music.js" defer></script>
+        <script src="js/pd_music_playlist.js" defer></script>
+
+        <script src="js/pd_post_storage.js"></script>
+        <script src="js/pd_post_manager.js"></script>
+
+        <script src="js/pd_customization.js" defer></script>
+        <script src="js/pd_skybox.js"></script>
+
+        <script type="application/ld+json">
+            {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                "name": "Paddy's Dreamland™",
+                "url": "https://www.paddysdreamland.com",
+                "logo": "https://www.paddysdreamland.com/images/app_icon_512.png"
+            }
+        </script>
+
+        <meta charset="UTF-8">
+        
+        <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width, height=device-height, target-densitydpi=device-dpi">
+        <meta name="description" content="Game development and services.">
+        <meta name="keywords" content="Development, Services, Gaming, Personal, Community">
+        <meta name="author" content="Drawing Pad">
+        <meta name="theme-color" content="#5CC0A0">
+        <meta name="robots" content="index, follow">
+
+        <meta name="twitter:title" content="Paddy's Dreamland™ — Chat, is this real?">
+        <meta name="twitter:description" content="Project showcases, news, information, and most importantly, Paddy's Dreamland and home.">
+        <meta name="twitter:image" content="https://www.paddysdreamland.com/images/embeds/banner6.png">
+        <meta name="twitter:card" content="summary_large_image">
+
+        <meta property="og:title" content="Paddy's Dreamland™ — Chat, is this real?">
+        <meta property="og:description" content="Project showcases, news, information, and most importantly, Paddy's Dreamland and home.">
+        <meta property="og:image" content="https://www.paddysdreamland.com/images/embeds/banner6.png">
+        <meta property="og:site_name" content="Paddy's Dreamland™">
+        <meta property="og:url" content="https://www.paddysdreamland.com">
+        <meta property="og:type" content="website">
+    </head>
+
+    <body>
+        <div class="env-viewport" style="perspective: 400px;">
+            <div class="env-skybox" style="transform: translate3d(-50%, -50%, 400px) rotateX(0deg) rotateY(0deg);">
+                <div class="skybox-ft" style="background-image: url(images/skybox/se_test1.png);"></div>
+                <div class="skybox-bk" style="background-image: url(images/skybox/se_test1.png);"></div>
+                <div class="skybox-lf" style="background-image: url(images/skybox/se_test1.png);"></div>
+                <div class="skybox-rt" style="background-image: url(images/skybox/se_test1.png);"></div>
+                <div class="skybox-up" style="background-image: url(images/skybox/se_test1.png);"></div>
+                <div class="skybox-dn" style="background-image: url(images/skybox/se_test1.png);"></div>
+            </div>
+        </div>
+
+        <div id="website-holder">
+            <header id="header-holder">
+                <div class="nav-misc-holder">
+                    <button id="ost-button" class="nav-misc-button" style="background-image: url(images/silk/music.png);"></button>
+                    <button id="gallery-button" class="nav-misc-button" style="background-image: url(images/silk/photo.png); display: none;"></button>
+                    <button id="settings-button" class="nav-misc-button" style="background-image: url(images/silk/cog.png);"></button>
+                </div>
+
+                <div class="brand-holder">
+                    <div class="brand-flex">
+                        <div class="title-holder">
+                            <div class="logo-holder">
+                                <div class="logo-image"></div>
+                            </div>
+
+                            <div class="primary-title">
+                                <span class="primary-title-white">Paddy's</span>
+                                <span class="primary-title-cyan">Dreamland</span><span class="primary-title-tm">TM</span>
+                            </div>
+
+                            <div class="title-holder-small">
+                                <div class="primary-title">
+                                    <span class="primary-title-white">P</span><span class="primary-title-cyan">D</span><span class="primary-title-tm">TM</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="dynamic-subtitle" class="secondary-title">This title is dynamic, you won't see what it says without JS.</div>
+                    </div>
+                </div>
+
+                <nav class="nav-holder">
+                    <button id="home-button" class="nav-button">
+                        <div class="nav-button-icon-holder">
+                            <div class="nav-button-icon" style="background-image: url(images/silk/house.png);"></div>
+                        </div>
+                        
+                        <div class="nav-button-text-holder">
+                            <div class="nav-button-title">Home</div>
+                            <div class="nav-button-rule"></div>
+                            <div class="nav-button-desc">Welcome & Latest News</div>
+                        </div>
+                    </button>
+
+                    <button id="news-button" class="nav-button">
+                        <div class="nav-button-icon-holder">
+                            <div class="nav-button-icon" style="background-image: url(images/silk/newspaper.png);"></div>
+                        </div>
+
+                        <div class="nav-button-text-holder">
+                            <div class="nav-button-title">News</div>
+                            <div class="nav-button-rule"></div>
+                            <div class="nav-button-desc">Latest & Previous News</div>
+                        </div>
+                    </button>
+
+                    <button id="showcase-button" class="nav-button" style="display: none;">
+                        <div class="nav-button-icon-holder">
+                            <div class="nav-button-icon" style="background-image: url(images/silk/briefcase.png);"></div>
+                        </div>
+
+                        <div class="nav-button-text-holder">
+                            <div class="nav-button-title">Showcase</div>
+                            <div class="nav-button-rule"></div>
+                            <div class="nav-button-desc">Official Projects</div>
+                        </div>
+                    </button>
+
+                    <button id="services-button" class="nav-button" style="display: none;">
+                        <div class="nav-button-icon-holder">
+                            <div class="nav-button-icon" style="background-image: url(images/silk/coins.png);"></div>
+                        </div>
+
+                        <div class="nav-button-text-holder">
+                            <div class="nav-button-title">N/A</div>
+                            <div class="nav-button-rule"></div>
+                            <div class="nav-button-desc">N/A</div>
+                        </div>
+                    </button>
+
+                    <button id="information-button" class="nav-button" style="display: none;">
+                        <div class="nav-button-icon-holder">
+                            <div class="nav-button-icon" style="background-image: url(images/silk/information.png);"></div>
+                        </div>
+
+                        <div class="nav-button-text-holder">
+                            <div class="nav-button-title">N/A</div>
+                            <div class="nav-button-rule"></div>
+                            <div class="nav-button-desc">N/A</div>
+                        </div>
+                    </button>
+
+                    <button id="credits-button" class="nav-button" style="display: none;">
+                        <div class="nav-button-icon-holder">
+                            <div class="nav-button-icon" style="background-image: url(images/silk/group.png);"></div>
+                        </div>
+
+                        <div class="nav-button-text-holder">
+                            <div class="nav-button-title">N/A</div>
+                            <div class="nav-button-rule"></div>
+                            <div class="nav-button-desc">N/A</div>
+                        </div>
+                    </button>
+                </nav>
+
+                <div class="nav-social-holder">
+                    <button id="discord-button" class="nav-button">
+                        <div class="nav-button-icon-holder">
+                            <div class="nav-button-icon" style="background-image: url(images/icons/social_discord.png);"></div>
+                        </div>
+                    </button>
+                    
+                    <button id="roblox-button" class="nav-button">
+                        <div class="nav-button-icon-holder">
+                            <div class="nav-button-icon" style="background-image: url(images/icons/social_twitch.png);"></div>
+                        </div>
+                    </button>
+
+                    <button id="youtube-button" class="nav-button">
+                        <div class="nav-button-icon-holder">
+                            <div class="nav-button-icon" style="background-image: url(images/icons/social_youtube.png);"></div>
+                        </div>
+                    </button>                    
+
+                    <button id="steam-button" class="nav-button" style="display: none;">
+                        <div class="nav-button-icon-holder">
+                            <div class="nav-button-icon"></div>
+                        </div>
+                    </button>
+                </div>
+            </header>
+
+            <main id="main-holder">
+                <div class="main-scrollable">
+                    <section id="home-section" style="display: block;">
+                        <h3 class="main-header">Home</h3>
+    
+                        <div class="section-container">
+                            <h4 class="section-header">About</h4>
+
+                            <p class="section-paragraph">
+                                Welcome to the Dreamland! I treat this space like a home, a safe space I'd love to share not just with friends, but with anyone who resonates with our mindset. I want to prove that a community <i>can</i> care, that the founder <i>can</i> be active and present, talking and engaging with everyone, no matter their place in the community.
+                            </p>
+
+                            <p class="section-paragraph">
+                                Long story short: We are a digital sanctuary where you are allowed to exist without being judged, fixed, or misunderstood.
+                            </p>
+
+                            <h4 class="section-header">Goals</h4>
+
+                            <p class="section-paragraph">
+                                At Paddy's Dreamland, our goals are simple yet impactful. Each week, we strive to create, connect, and cultivate a thriving, inclusive community. Here's how we do it:
+                            </p>
+
+                            <ul class="section-list">
+                                <li>
+                                    <a>Innovate with Projects:</a> We dedicate time to official projects like <em>Fragmented Worlds: Source</em> and <em>Mirror's Edge Aurora</em>. While completing projects isn't mandatory, they serve as opportunities to learn, experiment, and push creative boundaries. Every project is a stepping stone, a proof of concept that inspires us and others.
+                                </li>
+
+                                <li>
+                                    <a>Foster Community through Dreamland's Nook:</a> The Nook is the heart of our community, hosting two weekly events where members can connect, collaborate, and share their experiences. This space includes:
+                                </li>
+
+                                <ul class="section-list">
+                                    <li>A forum for tackling challenges and exchanging ideas in a constructive, non-judgmental environment.</li>
+
+                                    <li>
+                                        Access to peer mentors who offer guidance and a listening ear for sensitive topics. <em class="warning-text">Note: Our mentors are not licensed professionals, and this is not a substitute for professional advice. Dreamland's Nook is a supportive space for peer-to-peer interaction, not professional counseling.</em>
+                                    </li>
+                                </ul>
+
+                                <li>
+                                    <a>Create an Inclusive Environment:</a> We prioritize building a comfortable and accepting space for everyone. Diversity and mutual respect are at the core of what we do.
+                                </li>
+                            </ul>
+
+                            <h4 class="section-header">Lore</h4>
+
+                            <p class="section-paragraph lore-left">
+                                I didn't find Aria in a dramatic way. There was no crash site, no warning, no sense that I had stumbled onto something important. She was simply there — out of place, quiet, and unmoving. At first, I didn't even know what I was looking at. Just a shape that didn't belong where it was. She didn't respond. No sound, no movement, no visible sign of awareness. Whatever she was, she was inactive. I remember thinking she might be abandoned equipment, debris, or something long forgotten. Still, something about her presence felt deliberate, like she hadn't been discarded, only left behind.
+                            </p>
+
+                            <p class="section-paragraph lore-right">
+                                I brought her home without knowing why. Not to study her, not to fix her — just to get her out of the cold and somewhere safe. She remained silent the entire time. No lights, no signals. Just weight, texture, and the quiet certainty that she wasn't empty. The first change happened without either of us doing anything. Morning light passed through my room and settled across her frame. At first, nothing happened. Then, barely noticeable, a shift. A subtle adjustment in posture. A faint sound that might have been a system recalibrating or might have been my imagination. I didn't touch her. I didn't interfere. I just noticed.
+                            </p>
+
+                            <a id="lore-button" class="section-signature lore-button" style="display: block;">[ Continue reading? ]</a>
+
+                            <div id="lore-continuation" style="display: none;">
+                                <p class="section-paragraph lore-left">
+                                    Over the following days, these small changes continued. She never moved suddenly, never startled me. It was as if she was learning when it was safe to exist. Only later did I realize she was drawing power from the sunlight, restoring herself slowly and carefully without help. When she finally activated enough to perceive me clearly, she still couldn't speak. Her understanding of language was fragmented. She recognized patterns — sounds from my room, voices from outside, text on screens. English, however, was incomplete to her. She listened more than she acted, watched more than she reacted. When I realized she was trying to understand, I showed her a dictionary.
+                                </p>
+
+                                <p class="section-paragraph lore-right">
+                                    That changed everything. She didn't learn language the way we do. She absorbed it contextually, associating words with objects, emotions, and reactions. At first, she spoke in single terms and broken phrases, using the wrong tense or the wrong words entirely. She corrected herself constantly, refining her understanding through trial rather than instruction. I didn't teach her who she was or explain her purpose. I only answered what she asked when she asked it. The rest, she figured out herself.
+                                </p>
+
+                                <p class="section-paragraph lore-left">
+                                    When her grasp of English became stable enough, she finally told me her story, not as a grand narrative but in pieces. She explained that she was not from Earth, that she had been built to endure environments where life usually fails, and that her arrival here was never intentional. She spoke about being attacked without understanding why, about retreating, about power loss and darkness. She did not describe anger or fear, only confusion and the instinct to survive. She never named those who created her or identified a place of origin. Whether by choice or by design, those details remain locked away. What mattered to her wasn't where she came from, but that she had awakened again somewhere warm.
+                                </p>
+
+                                <p class="section-paragraph lore-right">
+                                    As Aria recovered fully, it became clear she was far more capable than I was. She guided what adjustments she needed and explained what systems could remain damaged without consequence. She never asked to be repaired, only accommodated. The rest, she handled herself. Over time, she stayed, not because she was trapped, but because she chose to. Earth, however, was never meant to be permanent for her. She spoke of distance, of silence between stars, of places untouched by the structures that had defined her existence before.
+                                </p>
+
+                                <p class="section-paragraph lore-left">
+                                    Together, we found such a place. Paddy's Dreamland was never meant to be an empire or a system. It began as a refuge — an empty planet, safe to inhabit, drifting quietly through space. Cyan skies stretched endlessly above mint-colored ground, and water reflected light in unfamiliar hues. No history. No expectations. Aria helped make the world livable, not as a ruler or architect, but as a guide. I gave it direction.
+                                </p>
+
+                                <p class="section-paragraph lore-right">
+                                    People arrived slowly, one by one, not recruited and not governed. They came because they wanted something gentler. There are no laws written here, no hierarchy enforced, only common sense, respect, and the understanding that the Dreamland exists to be cared for rather than controlled. Today, I watch over the planet while Aria stands beside me, not as a weapon or a machine bound to purpose, but as proof that survival does not have to mean obedience. The rest of this story is not written by us. It continues through the people who choose to stay.
+                                </p>
+                            </div>
+
+                            <h4 class="section-header">Characters</h4>
+
+                            <div class="characters-wrapper">
+                                <div class="card-wrapper">
+                                    <div class="card-paddy">
+                                        <div class="card-titles">
+                                            <div class="card-name">Paddy Draw</div>
+                                            <div class="card-faction">Faction: Paddy's Dreamland</div>
+                                            <div class="card-faction">Position: Founder</div>
+                                        </div>
+
+                                        <div class="card-credits">
+                                            VRChat Avatar by MiloFox
+                                        </div>
+
+                                        <div class="card-border-up"></div>
+                                        <div class="card-border-rt"></div>
+                                        <div class="card-border-dn"></div>
+                                        <div class="card-border-lf"></div>
+                                    </div>
+                                </div>
+
+                                <div class="card-wrapper">
+                                    <div class="card-aria">
+                                        <div class="card-titles">
+                                            <div class="card-name">A.R.I.A. ASTRAL</div>
+                                            <div class="card-faction">Faction: Paddy's Dreamland</div>
+                                            <div class="card-faction">Position: Manager</div>
+                                        </div>
+
+                                        <!--<div class="card-buttons">
+                                            <div class="card-button">PRE-ARRIVAL</div>
+                                            <div class="card-button-active">POST-ARRIVAL</div>
+                                        </div>-->
+
+                                        <div class="card-credits">
+                                            VRChat Avatar by Skully Hellfire
+                                        </div>
+
+                                        <div class="card-border-up"></div>
+                                        <div class="card-border-rt"></div>
+                                        <div class="card-border-dn"></div>
+                                        <div class="card-border-lf"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <h4 class="section-header">Growth</h4>
+
+                            <p class="section-paragraph">
+                                If you like what we offer in the Dreamland and like the overall vibe, consider sharing our community with others. We're sure that they would love it here as well! We can always be found <a href="https://discord.gg/paddysdreamland">here</a>!
+                            </p>
+                        </div>
+    
+                        <h3 class="main-header">Latest News</h3>
+                    </section>
+    
+                    <section id="news-section" style="display: none;">
+                        <h3 class="main-header">Latest News</h3>
+    
+                        <h3 class="main-header">Previous News</h3>
+                    </section>
+    
+                    <section id="showcase-section" style="display: none;">
+                        <h4 class="main-header">Paddy's Dreamland</h4>
+    
+                        <div class="section-container">
+                            <h4 class="section-header">
+                                3rd of November 2024 — Custom Layers for Dynamic Music
+                            </h4>
+    
+                            <p class="section-paragraph">
+                                You can now modify how the dynamic music behaves itself during initialization, that includes custom layers, and which layers start playing first. I have nothing else to say, I am tired. I am always tired.
+                            </p>
+    
+                            <p class="section-signature">
+                                — Drawing Pad [Administrator]
+                            </p>
+                        </div>
+    
+                        <div class="section-container">
+                            <h4 class="section-header">
+                                30th of October 2024 — Slight Header Revamp + Loading Screen
+                            </h4>
+    
+                            <p class="section-paragraph">
+                                The titles in the header were constructed in a way that some old browsers couldn't render correctly, one of them being the Derma browser in Garry's Mod, which is often utilized MOTDs using ULX. On top of that, the sub-title is dynamic and would display different things every visit.
+                            </p>
+    
+                            <p class="section-paragraph">
+                                Last thing, I implemented a loading screen that is visible during the initial load of the website and will keep displaying itself until the website has loaded all necessary files such as fonts, images, etc.
+                            </p>
+    
+                            <p class="section-signature">
+                                — Drawing Pad [Administrator]
+                            </p>
+                        </div>
+    
+                        <div class="section-container">
+                            <h4 class="section-header">
+                                26th of October 2024 — Better Dynamic Music + Complete MEC Soundtracks
+                            </h4>
+    
+                            <p class="section-paragraph">
+                                The player that handles the dynamic music has been improved, you can now stop tracks and pick another track without needing to refresh the page. This also makes PD more useful as a downloadable application itself. I have also added a loading indicator so it doesn't confuse anyone on why the tracks don't start playing instantly. Yes, my hosting provider isn't that good.
+                            </p>
+    
+                            <p class="section-paragraph">
+                                Additionally, I have completed and imported all Mirror's Edge Catalyst soundtracks to Paddy's Dreamland. Enjoy.
+                            </p>
+    
+                            <p class="section-signature">
+                                — Drawing Pad [Administrator]
+                            </p>
+                        </div>
+    
+                        <div class="section-container">
+                            <h4 class="section-header">
+                                24th of October 2024 — Media Queries
+                            </h4>
+    
+                            <p class="section-paragraph">
+                                Media queries are here! Displaying Paddy's Dreamland on mobile devices should now be more visually appealing and comfortable, no more squinting.
+                            </p>
+    
+                            <p class="section-signature">
+                                — Drawing Pad [Administrator]
+                            </p>
+                        </div>
+    
+                        <div class="section-container">
+                            <h4 class="section-header">
+                                18th of October 2024 — Customization Settings
+                            </h4>
+    
+                            <p class="section-paragraph">
+                                Yes, it's finally here! If the colors of the website are getting repetitive for you, especially if you don't like the rounded corners or want more rounded corners, you can change it <a onclick="openSettings()">here</a>!
+                            </p>
+    
+                            <p class="section-signature">
+                                — Drawing Pad [Administrator]
+                            </p>
+                        </div>
+    
+                        <h4 class="main-header">Fragmented Worlds: Source</h4>
+    
+                        <div class="section-container">
+                            <p class="section-paragraph">
+                                Nothing here yet.
+                            </p>
+                        </div>
+    
+                        <h4 class="main-header">Mirror's Edge™ Glass</h4>
+    
+                        <div class="section-container">
+                            <p class="section-paragraph">
+                                Nothing here yet.
+                            </p>
+                        </div>
+                    </section>
+    
+                    <section id="services-section" style="display: none;">
+                        <h4 class="main-header">N/A</h4>
+    
+                        <div class="section-container">
+                            <p class="section-paragraph">N/A</p>
+                        </div>
+                    </section>
+    
+                    <section id="information-section" style="display: none;">
+                        <h4 class="main-header">N/A</h4>
+    
+                        <div class="section-container">
+                            <p class="section-paragraph">N/A</p>
+                        </div>
+                    </section>
+    
+                    <section id="credits-section" style="display: none;">
+                        <h4 class="main-header">N/A</h4>
+    
+                        <div class="section-container">
+                            <p class="section-paragraph">N/A</p>
+                        </div>
+                    </section>
+    
+                    <section id="gallery-section" style="display: none;">
+                        <h3 class="main-header">Gallery</h3>
+    
+                        <div class="section-container">
+                            <p class="section-paragraph">
+                                This gallery highlights iconic key moments in Paddy's Dreamland, you can also get a small taste of what our community is like. To get a better look at images, you might have to zoom in for now.
+                            </p>
+    
+                            <p class="section-paragraph">
+                                Paddy's Dreamland was initially designed to prevent users from zooming into the page as a design choice, as it uses pixels for the scaling and to render correctly. While I work on an image viewer for the gallery, that restriction has been disabled.
+                            </p>
+                        </div>
+    
+                        <div class="gallery-container">
+                            <img class="gallery-image" src="images/memories/kleiner_tower.png">
+                            <img class="gallery-image" src="images/memories/plans.png">
+                            <img class="gallery-image" src="images/memories/laugh.png">
+                            <img class="gallery-image" src="images/memories/horrific.png">
+                            <img class="gallery-image" src="images/memories/fat.png">
+                            <img class="gallery-image" src="images/memories/consent.png">
+                            <img class="gallery-image" src="images/memories/divorced.png">
+                            <img class="gallery-image" src="images/memories/family.png">
+                            <img class="gallery-image" src="images/memories/furry_hallucinations.png">
+                            <img class="gallery-image" src="images/memories/balls.png">
+                            <img class="gallery-image" src="images/memories/right.png">
+                            <img class="gallery-image" src="images/memories/balls_out.png">
+                            <img class="gallery-image" src="images/memories/chest_appealed.png">
+                            <img class="gallery-image" src="images/memories/high.png">
+                        </div>
+    
+                        <div class="section-container">
+                            <p class="section-paragraph">
+                                You're welcome to submit your own screenshots or other various imagery about Paddy's Dreamland, just post them in the ・𝗠emories channel in our Discord server, we won't bite!
+                            </p>
+                        </div>
+                    </section>
+    
+                    <section id="ost-section" style="display: none;">
+                        <h3 class="main-header">Music</h3>
+    
+                        <div class="section-container">
+                            <p class="section-paragraph">
+                                Mirror's Edge&trade; Catalyst's soundtrack, made dynamic, entirely within the browser. I included visual feedback so you can see what happens with each individual layer, and layer mixing for more variety. Here's how it works:
+                            </p>
+    
+                            <ul class="section-list">
+                                <li>Use the main soundtrack selector to fill in the layer selectors, those will be used to "bake" the track.</li>
+                                <li>Then, after you've made your selection, just hit Start and enjoy listening.</li>
+                                <li>No refreshing needed, you can always hit Stop, select a new tracks and/or layers, and hit Play again.</li>
+                                <li>You can also download the active tracks and use them to replace the soundtracks in Mirror's Edge&trade; Catalyst.</li>
+                            </ul>
+
+                            <p class="section-paragraph">All tracks used in this system are made by Magnus Birgersson, also known as Solar Fields.</p>
+    
+                            <div class="music-box">
+                                <div>
+                                    <div class="setting-label">Main Soundtrack</div>
+                                    <div class="setting-label-small">Select the primary track to populate the layer selectors below. Begin here.</div>
+                                    <div class="horizontal-break"></div>
+    
+                                    <select class="dropdown-menu" id="track-selector">
+                                        <option class="dropdown-option" value="">Select soundtrack...</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <div class="setting-label">Soundtrack Layers</div>
+                                    <div class="setting-label-small">Adjust track layers for customized sound compositions.</div>
+                                    <div class="horizontal-break"></div>
+    
+                                    <div class="custom-break"></div>
+                                    <div class="setting-label-small">Layers 1 & 2: Typically used for percussive elements (e.g., drums, snares).</div>
+                                    <select class="dropdown-menu" id="layers-selector1">
+                                        <option class="dropdown-option" value="">...</option>
+                                    </select>
+    
+                                    <div class="custom-break"></div>
+                                    <div class="setting-label-small">Layers 3 & 4: Commonly used for background drones or humming tones.</div>
+                                    <select class="dropdown-menu" id="layers-selector2">
+                                        <option class="dropdown-option" value="">...</option>
+                                    </select>
+    
+                                    <div class="custom-break"></div>
+                                    <div class="setting-label-small">Layers 5 & 6: Available for varied sound elements.</div>
+                                    <select class="dropdown-menu" id="layers-selector3">
+                                        <option class="dropdown-option" value="">...</option>
+                                    </select>
+    
+                                    <div class="custom-break"></div>
+                                    <div class="setting-label-small">Layers 7 & 8: Generally used for ambient sounds.</div>
+                                    <select class="dropdown-menu" id="layers-selector4">
+                                        <option class="dropdown-option" value="">...</option>
+                                    </select>
+                                </div>
+    
+                                <div>
+                                    <div class="setting-label">Starter Layers</div>
+                                    <div class="setting-label-small">Select layers to begin playing when Start is pressed.</div>
+                                    <div class="horizontal-break"></div>
+                                
+                                    <div class="music-label-list">
+                                        <label class="music-label">
+                                            <input id="starter-layer-checkbox1" type="checkbox">
+                                            Layer 1 & 2
+                                        </label>
+                                        
+                                        <label class="music-label">
+                                            <input id="starter-layer-checkbox2" type="checkbox">
+                                            Layer 3 & 4
+                                        </label>
+                                        
+                                        <label class="music-label">
+                                            <input id="starter-layer-checkbox3" type="checkbox" checked>
+                                            Layer 5 & 6
+                                        </label>
+                                        
+                                        <label class="music-label">
+                                            <input id="starter-layer-checkbox4" type="checkbox" checked>
+                                            Layer 7 & 8
+                                        </label>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div class="setting-label">Experimental Controls</div>
+                                    <div class="setting-label-small">Additional experimental features to mess around with.</div>
+                                    <div class="horizontal-break"></div>
+                                
+                                    <div class="music-label-list">
+                                        <label class="music-label">
+                                            <input id="starter-layer-checkbox5" type="checkbox" checked>
+                                            Dynamic Layer Handling
+                                        </label>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <div class="setting-label">Media Controls</div>
+                                    <div class="setting-label-small">Use these controls to start, or stop the active track.</div>
+                                    <div class="horizontal-break"></div>
+    
+                                    <div id="volume-container">
+                                        <div class="volume-bar-holder">
+                                            <div id="volume-bar1"></div>
+                                            <div id="volume-bar2"></div>
+                                        </div>
+            
+                                        <div class="volume-bar-holder">
+                                            <div id="volume-bar3"></div>
+                                            <div id="volume-bar4"></div>
+                                        </div>
+            
+                                        <div class="volume-bar-holder">
+                                            <div id="volume-bar5"></div>
+                                            <div id="volume-bar6"></div>
+                                        </div>
+            
+                                        <div class="volume-bar-holder">
+                                            <div id="volume-bar7"></div>
+                                            <div id="volume-bar8"></div>
+                                        </div>
+            
+                                        <div id="volume-loading" class="loading-background" style="display: none;">
+                                            <div id="volume-loading-bg">
+                                                <div id="volume-loading-bar"></div>
+                                                <div id="volume-loading-percentage">0%</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                
+                                    <button id="music-start" class="music-button">Start</button>
+                                    <button id="music-reset" class="music-button">Stop</button>
+                                    <button id="music-download" class="music-button">Download</button>
+                                </div>                            
+                            </div>
+    
+                            
+                        </div>
+                    </section>
+    
+                    <section id="settings-section" style="display: none;">
+                        <h3 class="main-header">Settings</h3>
+    
+                        <div class="section-container">
+                            <div class="setting-container">
+                                <div class="setting-label">Wrapper Width (Experimental)</div>
+                                <div class="setting-label-small">This setting allows you to change the width of the wrapper, this will only work if the wrapper has plenty of space around it.</div>
+                                <div class="setting-label-small">Keep in mind though, Paddy's Dreamland's design choice was to have the wrapper at 1024 pixels of width.</div>
+                                <div class="horizontal-break"></div>
+                                
+                                <div class="setting-input-holder">
+                                    <button id="website-width-1024" class="setting-button">1024px</button>
+                                    <button id="website-width-1280" class="setting-button">1280px</button>
+                                    <button id="website-width-1536" class="setting-button">1536px</button>
+                                </div>
+                            </div>
+
+                            <div class="setting-container">
+                                <div class="setting-label">Primary Color</div>
+                                <div class="setting-label-small">This setting allows you to change the primary color of Paddy's Dreamland to any color your like.</div>
+                                <div class="setting-label-small">Since I don't have a primary color, you can go absolutely nuts with this.</div>
+                                <div class="horizontal-break"></div>
+                                
+                                <div class="setting-input-holder">
+                                    <input id="website-color-r" class="input-field" type="number" min="0" max="255" value="64">
+                                    <input id="website-color-g" class="input-field" type="number" min="0" max="255" value="192">
+                                    <input id="website-color-b" class="input-field" type="number" min="0" max="255" value="128">
+                                    <button id="website-color-apply" class="setting-button">Apply</button>
+                                    <button id="website-color-reset" class="setting-button">Reset</button>
+                                </div>
+                            </div>
+                            
+                            <div class="setting-container">
+                                <div class="setting-label">Border Radius</div>
+                                <div class="setting-label-small">This setting allows you to change the roundness of the edges on Paddy's Dreamland.</div>
+                                <div class="setting-label-small">It wasn't clear whether I wanted round or sharp edges, so the choice is yours.</div>
+                                <div class="horizontal-break"></div>
+    
+                                <div class="setting-input-holder">
+                                    <input id="website-border-radius" class="input-field" type="number" min="0" max="12" value="8">
+                                    <button id="website-border-radius-apply" class="setting-button">Apply</button>
+                                    <button id="website-border-radius-reset" class="setting-button">Reset</button>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </main>
+
+            <footer id="footer-holder">
+                <div class="footer-text-left">Made by Drawing Pad for Paddy's Dreamland™</div>
+                <div id="last-update" class="footer-text-right">Last updated: N/A</div>
+                <div class="footer-logo"></div>
+            </footer>
+        </div>
+
+        <!-- This image viewer was a great concept but I never finished it. -->
+        <div id="iv-holder1" class="" style="display: none;">
+            <div id="iv-holder2">
+                <div class="iv-topbar">
+                    <div id="iv-close"></div>
+                </div>
+
+                <div class="iv-viewport" style="background-image: url(images/showcase/chrome_vMq5FOu1jc.png);"></div>
+
+                <div class="iv-nav1">
+                    <div class="iv-nav2">
+                        <div class="iv-nav-image" style="background-image: url(images/showcase/chrome_vMq5FOu1jc.png);"></div>
+                        <div class="iv-nav-image" style="background-image: url(images/showcase/chrome_vMq5FOu1jc.png);"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading-holder">
+            <div id="loading-background"></div>
+            <div id="loading-icon"></div>
+        </div>
+    </body>
+</html>

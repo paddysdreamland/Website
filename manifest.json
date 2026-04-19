@@ -1,0 +1,46 @@
+{
+    "name": "Paddy's Dreamland",
+    "short_name": "Dreamland",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#000000",
+    "theme_color": "#000000",
+    "icons": [
+        {
+            "src": "images/app_icon_16.png",
+            "sizes": "16x16",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "images/app_icon_32.png",
+            "sizes": "32x32",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "images/app_icon_64.png",
+            "sizes": "64x64",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "images/app_icon_128.png",
+            "sizes": "128x128",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "images/app_icon_256.png",
+            "sizes": "256x256",
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "images/app_icon_512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any"
+        }
+    ]
+}

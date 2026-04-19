@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Error</title>
+    <meta name="robots" content="noindex" />
+    <style>
+        :root {
+            --bg: #0b0b0c;
+            --card: #141417;
+            --text: #e9e9ef;
+            --muted: #a3a3ad;
+            --accent: #ff3b81;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+        }
+
+        body {
+            margin: 0;
+            font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+            color: var(--text);
+            background: radial-gradient(1000px 600px at 10% 10%, #191922, #0b0b0c);
+            display: grid;
+            place-items: center;
+            padding: 24px;
+        }
+
+        .wrap {
+            width: min(720px, 100%);
+            background: var(--card);
+            border-radius: 20px;
+            padding: 28px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .04);
+            border: 1px solid rgba(255, 255, 255, .06);
+        }
+
+        .eyebrow {
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: .12em;
+            font-size: .78rem;
+        }
+
+        h1 {
+            margin: .2rem 0 0;
+            font-size: clamp(1.6rem, 2.4vw + 1rem, 2.4rem);
+        }
+
+        .code {
+            display: inline-block;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        p {
+            margin: .4rem 0 0;
+            color: #cfcfda;
+        }
+
+        .actions {
+            margin-top: 18px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap
+        }
+
+        a.btn,
+        button.btn {
+            appearance: none;
+            border: 1px solid rgba(255, 255, 255, .12);
+            background: transparent;
+            color: var(--text);
+            padding: 10px 14px;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        a.btn.primary,
+        button.btn.primary {
+            background: var(--accent);
+            color: white;
+            border-color: transparent;
+            font-weight: 600;
+        }
+
+        .grid {
+            margin-top: 16px;
+            display: grid;
+            gap: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        }
+
+        .card {
+            background: #0f0f12;
+            border: 1px solid rgba(255, 255, 255, .06);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .muted {
+            color: var(--muted);
+            font-size: .9rem
+        }
+
+        footer {
+            margin-top: 18px;
+            color: var(--muted);
+            font-size: .8rem;
+            text-align: center
+        }
+    </style>
+</head>
+
+<body>
+    <main class="wrap" role="main" aria-labelledby="err-title">
+        <div class="eyebrow" id="eyebrow">Something went wrong</div>
+        <h1 id="err-title">Error</h1>
+        <p id="err-message">An unexpected error occurred. You can try going back or head to the homepage.</p>
+
+        <div class="actions">
+            <a class="btn primary" id="home-link" href="/">Go to homepage</a>
+            <button class="btn" onclick="history.back()">Go back</button>
+            <!--<a class="btn" id="contact-link" href="/contact">Contact support</a>-->
+        </div>
+
+        <section class="grid" aria-labelledby="tips-title">
+            <div class="card">
+                <div class="muted" id="tips-title">Quick tips</div>
+                <ul id="tips" style="margin:.4rem 0 0 1.1rem;"></ul>
+            </div>
+            <div class="card">
+                <div class="muted">Details</div>
+                <p style="margin:.4rem 0 0">Code: <span class="code" id="err-code">—</span></p>
+                <p style="margin:.2rem 0 0">Time: <span id="err-time"></span></p>
+                <p style="margin:.2rem 0 0">URL: <span id="err-url"></span></p>
+            </div>
+        </section>
+
+        <footer id="footer-note">If this keeps happening, send us the code above so we can fix it fast.</footer>
+    </main>
+
+    <script>
+        (function () {
+            // 1) Pull error code from query (?code=404) or hash (#404)
+            const url = new URL(location.href);
+            const code = url.searchParams.get('code') || location.hash.replace('#', '') || 'generic';
+
+            // 2) Copy/paste dictionary—extend as you like
+            const ERRORS = {
+                '400': { title: 'Bad Request', msg: 'The request looked funky. Double-check the URL or form.' },
+                '401': { title: 'Unauthorized', msg: 'You need to sign in to access this.' },
+                '403': { title: 'Forbidden', msg: 'You don’t have permission to view this.' },
+                '404': { title: 'Page not found', msg: 'That page doesn’t exist. It might’ve moved or never existed.' },
+                '405': { title: 'Method not allowed', msg: 'That action isn’t supported here.' },
+                '408': { title: 'Request timeout', msg: 'Your request took too long. Try again.' },
+                '429': { title: 'Too many requests', msg: 'Slow down a sec. You’ve hit the rate limit.' },
+                '500': { title: 'Server error', msg: 'That’s on us. The server had a little meltdown.' },
+                '502': { title: 'Bad gateway', msg: 'Upstream had a bad day. Try again shortly.' },
+                '503': { title: 'Service unavailable', msg: 'We’re down for a bit. Back soon.' },
+                '504': { title: 'Gateway timeout', msg: 'Upstream took too long to respond.' },
+                'generic': { title: 'Something went wrong', msg: 'An unexpected error occurred. Try again or head home.' }
+            };
+
+            const data = ERRORS[code] || ERRORS['generic'];
+
+            // 3) Inject content
+            document.title = `${data.title} — Error`;
+            document.getElementById('eyebrow').textContent = 'Error';
+            document.getElementById('err-title').textContent = data.title;
+            document.getElementById('err-message').textContent = data.msg;
+            document.getElementById('err-code').textContent = isNaN(+code) ? '—' : code;
+            document.getElementById('err-time').textContent = new Date().toLocaleString();
+            document.getElementById('err-url').textContent = location.pathname;
+
+            // 4) Some lightweight, code-specific tips
+            const TIP_BANK = {
+                '404': ['Check the URL for typos', 'Use the site search to find what you need'],
+                '500': ['Wait a minute and retry', 'If it keeps failing, contact support with the time & code'],
+                '401': ['Sign in and try again', 'Your session may have expired'],
+                '429': ['Give it 30–60 seconds', 'If scripted, add exponential backoff'],
+                'generic': ['Refresh the page', 'Try again on a stable connection']
+            };
+            const tips = TIP_BANK[code] || TIP_BANK.generic;
+            const ul = document.getElementById('tips');
+            ul.innerHTML = tips.map(t => `<li>${t}</li>`).join('');
+
+            // 5) Optional: tweak links per code
+            const contact = document.getElementById('contact-link');
+            if (code === '401') contact.href = '/login';
+        })();
+    </script>
+</body>
+
+</html>

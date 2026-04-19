@@ -1,0 +1,49 @@
+DirectoryIndex pd_main.html
+Options -Indexes
+
+RewriteEngine On
+
+# 1) High-signal single files → 410 Gone (cheaper than 404, tells bots "stop coming back")
+RewriteRule ^(wp-login\.php|xmlrpc\.php|wp-cron\.php|wp-trackback\.php|wp-comments-post\.php|wp-signup\.php|wp-activate\.php)$ - [G]
+
+# 2) Core WP directories → 403 Forbidden
+RewriteCond %{REQUEST_URI} ^/(wp-admin|wp-includes|wp-content)(/|$) [NC]
+RewriteRule ^ - [F]
+
+# 3) Block WP REST API & discovery endpoints
+RewriteCond %{REQUEST_URI} ^/(wp-json|wp-links-opml\.php|readme\.html|license\.txt)$ [NC]
+RewriteRule ^ - [F]
+
+# 4) Block common leak/loot files
+RewriteCond %{REQUEST_URI} ^/(wp-config\.php|sitemap\.xml|sitemap_index\.xml|\.well-known/change-password)$ [NC]
+RewriteRule ^ - [F]
+
+# 5) Block plugin/theme probing (generic)
+RewriteCond %{REQUEST_URI} ^/wp-content/(plugins|themes)/ [NC]
+RewriteRule ^ - [F]
+
+# 6) Block classic dir scans & secrets
+RewriteCond %{REQUEST_URI} ^/(\.env|\.git|\.svn|vendor/|composer\.(json|lock)) [NC]
+RewriteRule ^ - [F]
+
+# 7) Nuke ugly querystring probes (SQLi/path traversal noise)
+RewriteCond %{QUERY_STRING} (\.\./|%2e%2e/|/etc/passwd|union(\s|%20)+select|select(\s|%20)+.*from|%00|\x00) [NC]
+RewriteRule ^ - [F]
+
+ErrorDocument 403 /pd_error.html?code=403
+ErrorDocument 404 /pd_error.html?code=404
+ErrorDocument 410 /pd_error.html?code=410
+ErrorDocument 500 /pd_error.html?code=500
+
+<IfModule mod_headers.c>
+    Header always set Cache-Control "no-cache, no-store, must-revalidate"
+    Header always set Pragma "no-cache"
+    Header always set Expires "0"
+</IfModule>
+
+<FilesMatch "\.(mp3|wav)$">
+    Header unset Cache-Control
+    Header unset Pragma
+    Header unset Expires
+    Header set Cache-Control "max-age=2592000, public"
+</FilesMatch>
