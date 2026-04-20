@@ -335,7 +335,7 @@ a {
 
 .brand-flex {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   gap: 5px;
 }
 
@@ -344,7 +344,7 @@ a {
   background-image: var(--holder-background-image);
   background-color: var(--holder-background-color);
   width: 98px;
-  height: 64px;
+  height: 98px;
   border-radius: var(--custom-border-radius) var(--custom-border-radius) var(--custom-border-radius) 0;
 }
 .logo-holder::before {
@@ -399,7 +399,7 @@ a {
   width: auto;
   height: 64px;
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
   gap: 5px;
 }
 
