@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paddy's Dreamland — Museum</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --col-bg:        #080b10;
+      --col-fg:        #e8e0d4;
+      --col-accent:    #7ecfff;
+      --col-accent2:   #ff8ecf;
+      --col-dim:       rgba(232, 224, 212, 0.4);
+      --col-panel:     rgba(8, 11, 16, 0.72);
+      --font-display:  'Cormorant Garamond', Georgia, serif;
+      --font-ui:       'DM Mono', 'Courier New', monospace;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400&display=swap');
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--col-bg);
+      color: var(--col-fg);
+      font-family: var(--font-ui);
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+    }
+
+    canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* ── Crosshair ── */
+    #crosshair {
+      position: fixed;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 20px; height: 20px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    #crosshair::before,
+    #crosshair::after {
+      content: '';
+      position: absolute;
+      background: var(--col-fg);
+      opacity: 0.75;
+    }
+    #crosshair::before {
+      width: 1px; height: 100%;
+      left: 50%; top: 0;
+      transform: translateX(-50%);
+    }
+    #crosshair::after {
+      width: 100%; height: 1px;
+      top: 50%; left: 0;
+      transform: translateY(-50%);
+    }
+    #crosshair.dot::before { display: none; }
+    #crosshair.dot::after {
+      width: 4px; height: 4px;
+      border-radius: 50%;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    body.locked #crosshair { opacity: 1; }
+
+    /* ── Interact prompt ── */
+    #interact-prompt {
+      position: fixed;
+      bottom: 38%; left: 50%;
+      transform: translateX(-50%);
+      font-family: var(--font-ui);
+      font-size: 11px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--col-fg);
+      background: var(--col-panel);
+      border: 1px solid rgba(126, 207, 255, 0.25);
+      padding: 6px 14px;
+      border-radius: 2px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      backdrop-filter: blur(8px);
+    }
+    #interact-prompt.visible { opacity: 1; }
+
+    /* ── Overlay (pointer lock instructions) ── */
+    #overlay {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      background: radial-gradient(ellipse at 50% 60%, #0d1420 0%, #080b10 70%);
+      z-index: 100;
+      transition: opacity 0.6s;
+    }
+    #overlay.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .overlay-eyebrow {
+      font-family: var(--font-ui);
+      font-size: 10px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--col-accent);
+      margin-bottom: 18px;
+      opacity: 0.8;
+    }
+
+    .overlay-title {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 6vw, 5rem);
+      font-weight: 300;
+      letter-spacing: 0.04em;
+      color: var(--col-fg);
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+
+    .overlay-title em {
+      font-style: italic;
+      color: var(--col-accent2);
+    }
+
+    .overlay-subtitle {
+      font-family: var(--font-display);
+      font-size: clamp(0.95rem, 2vw, 1.3rem);
+      font-weight: 300;
+      font-style: italic;
+      color: var(--col-dim);
+      margin-bottom: 52px;
+    }
+
+    .overlay-enter {
+      font-family: var(--font-ui);
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--col-fg);
+      background: transparent;
+      border: 1px solid rgba(232, 224, 212, 0.3);
+      padding: 13px 36px;
+      cursor: pointer;
+      transition: border-color 0.25s, color 0.25s, background 0.25s;
+      border-radius: 1px;
+    }
+    .overlay-enter:hover {
+      border-color: var(--col-accent);
+      color: var(--col-accent);
+      background: rgba(126, 207, 255, 0.04);
+    }
+
+    .overlay-controls {
+      margin-top: 40px;
+      display: flex;
+      gap: 28px;
+      font-family: var(--font-ui);
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      color: var(--col-dim);
+    }
+
+    .overlay-controls span {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    kbd {
+      display: inline-block;
+      padding: 2px 6px;
+      border: 1px solid rgba(232, 224, 212, 0.2);
+      border-radius: 2px;
+      font-family: var(--font-ui);
+      font-size: 9px;
+      color: var(--col-fg);
+    }
+
+    /* ── Decorative lines on overlay ── */
+    #overlay::before, #overlay::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1px;
+      background: linear-gradient(to bottom, transparent, rgba(126,207,255,0.3), transparent);
+    }
+    #overlay::before { top: 0; height: 18%; }
+    #overlay::after  { bottom: 0; height: 18%; }
+
+    /* ── ESC hint ── */
+    #esc-hint {
+      position: fixed;
+      top: 16px; right: 20px;
+      font-family: var(--font-ui);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--col-dim);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+    body.locked #esc-hint { opacity: 1; }
+
+    /* ── Back to site link ── */
+    #back-link {
+      position: fixed;
+      top: 16px; left: 20px;
+      font-family: var(--font-ui);
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      color: var(--col-dim);
+      text-decoration: none;
+      text-transform: uppercase;
+      transition: color 0.2s;
+      z-index: 200;
+    }
+    #back-link:hover { color: var(--col-accent); }
+    #back-link::before { content: '← '; }
+  </style>
+</head>
+<body>
+
+  <a href="/" id="back-link">Dreamland</a>
+
+  <!-- Pointer lock overlay -->
+  <div id="overlay">
+    <p class="overlay-eyebrow">Paddy's Dreamland</p>
+    <h1 class="overlay-title">The <em>Museum</em></h1>
+    <p class="overlay-subtitle">An explorable space</p>
+    <button class="overlay-enter" id="enter-btn">Enter</button>
+    <div class="overlay-controls">
+      <span><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</span>
+      <span><kbd>Mouse</kbd> Look</span>
+      <span><kbd>E</kbd> Interact</span>
+      <span><kbd>ESC</kbd> Pause</span>
+    </div>
+  </div>
+
+  <div id="crosshair"></div>
+  <div id="interact-prompt">Press <kbd>E</kbd> to read</div>
+  <div id="esc-hint"><kbd>ESC</kbd> — Pause</div>
+
+  <div id="canvas-container"></div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
