@@ -10,7 +10,7 @@ renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.shadowMap.enabled = true
 renderer.shadowMap.type    = THREE.PCFSoftShadowMap
 renderer.toneMapping       = THREE.ACESFilmicToneMapping
-renderer.toneMappingExposure = 0.9
+renderer.toneMappingExposure = 1.4
 renderer.outputColorSpace  = THREE.SRGBColorSpace
 
 const container = document.getElementById('canvas-container')
@@ -46,6 +46,15 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix()
   renderer.setSize(window.innerWidth, window.innerHeight)
 })
+
+// ── Load world then start loop ──
+enterBtn.disabled = true
+enterBtn.textContent = 'Loading...'
+
+await world.load()
+
+enterBtn.disabled = false
+enterBtn.textContent = 'Enter'
 
 // ── Game loop ──
 let prev = performance.now()

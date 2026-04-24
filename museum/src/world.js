@@ -1,42 +1,35 @@
 import * as THREE from 'three'
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'
 
-// ── Palette (matching CSS vars roughly) ──
-const COL = {
-  bg:       0x080b10,
-  floor:    0x0e1218,
-  wall:     0x111620,
-  ceiling:  0x0a0e14,
-  trim:     0x1e2836,
-  accent:   0x7ecfff,
-  accent2:  0xff8ecf,
-  warm:     0xfff3d4,
-  panel:    0x141c28,
-  panelBdr: 0x2a3f5a,
+// ── Room dimensions — update these to match your Blender model ──
+const ROOM = {
+  w: 24,
+  h: 5,
+  d: 32,
 }
 
-const ROOM = {
-  w: 24,    // width  (x)
-  h: 5,     // height (y)
-  d: 32,    // depth  (z) — the main hall
+// ── Palette ──
+const COL = {
+  accent:  0x7ecfff,
+  accent2: 0xff8ecf,
+  warm:    0xfff3d4,
+  panel:   0x141c28,
 }
 
 export class World {
   constructor(scene) {
-    this.scene    = scene
-    this.walls    = []      // collision objects
-    this.exhibits = []      // interactive objects { mesh, data }
+    this.scene          = scene
+    this.walls          = []
+    this.exhibits       = []
     this._interactTarget = null
+    this._orb           = null
+    this._glowLight     = null
 
-    this._build()
-    this._buildExhibits()
-    this._buildLighting()
+    this._buildFallbackLighting()
   }
 
   _mat(color, roughness = 0.85, metalness = 0, emissive = 0, emissiveIntensity = 0) {
-    return new THREE.MeshStandardMaterial({
-      color, roughness, metalness,
-      emissive, emissiveIntensity,
-    })
+    return new THREE.MeshStandardMaterial({ color, roughness, metalness, emissive, emissiveIntensity })
   }
 
   _box(w, h, d, mat, x = 0, y = 0, z = 0, castShadow = false, receiveShadow = true) {
@@ -48,88 +41,35 @@ export class World {
     return mesh
   }
 
-  _buildRoom(ox, oy, oz, rw, rh, rd) {
-    const floorMat   = this._mat(COL.floor,   0.9, 0)
-    const wallMat    = this._mat(COL.wall,     0.9, 0)
-    const ceilMat    = this._mat(COL.ceiling,  0.95, 0)
-    const trimMat    = this._mat(COL.trim,     0.7, 0.2)
+  // Await this in main.js before starting the loop
+  async load() {
+    const loader = new GLTFLoader()
+    const gltf   = await loader.loadAsync('assets/models/streamroom.glb')
 
-    // Floor
-    this._box(rw, 0.1, rd, floorMat, ox, oy,       oz)
-    // Ceiling
-    this._box(rw, 0.1, rd, ceilMat,  ox, oy + rh,  oz)
+    gltf.scene.traverse(obj => {
+      if (obj.isMesh) {
+        obj.castShadow    = true
+        obj.receiveShadow = true
 
-    // Walls (added to collision list)
-    const wallThick = 0.4
-    const walls = [
-      // back
-      this._box(rw + wallThick*2, rh, wallThick, wallMat, ox, oy + rh/2, oz - rd/2 - wallThick/2),
-      // front
-      this._box(rw + wallThick*2, rh, wallThick, wallMat, ox, oy + rh/2, oz + rd/2 + wallThick/2),
-      // left
-      this._box(wallThick, rh, rd, wallMat, ox - rw/2 - wallThick/2, oy + rh/2, oz),
-      // right
-      this._box(wallThick, rh, rd, wallMat, ox + rw/2 + wallThick/2, oy + rh/2, oz),
-    ]
-    walls.forEach(w => this.walls.push(w))
-
-    // Skirting trim
-    const skirtH = 0.12
-    const skirtD = 0.06
-    ;[
-      [rw, skirtH, skirtD, ox, oy + skirtH/2, oz - rd/2 + skirtD/2],
-      [rw, skirtH, skirtD, ox, oy + skirtH/2, oz + rd/2 - skirtD/2],
-      [skirtD, skirtH, rd, ox - rw/2 + skirtD/2, oy + skirtH/2, oz],
-      [skirtD, skirtH, rd, ox + rw/2 - skirtD/2, oy + skirtH/2, oz],
-    ].forEach(([w,h,d,x,y,z]) => this._box(w,h,d, trimMat, x,y,z))
-
-    // Cornice trim (top)
-    ;[
-      [rw, skirtH, skirtD, ox, oy + rh - skirtH/2, oz - rd/2 + skirtD/2],
-      [rw, skirtH, skirtD, ox, oy + rh - skirtH/2, oz + rd/2 - skirtD/2],
-      [skirtD, skirtH, rd, ox - rw/2 + skirtD/2, oy + rh - skirtH/2, oz],
-      [skirtD, skirtH, rd, ox + rw/2 - skirtD/2, oy + rh - skirtH/2, oz],
-    ].forEach(([w,h,d,x,y,z]) => this._box(w,h,d, trimMat, x,y,z))
-  }
-
-  _build() {
-    // Main hall
-    this._buildRoom(0, 0, 0, ROOM.w, ROOM.h, ROOM.d)
-
-    // Floor tiles (decorative grid lines via thin boxes)
-    const tileMat = this._mat(COL.trim, 1, 0)
-    const tileSize = 3
-    for (let x = -ROOM.w/2; x <= ROOM.w/2; x += tileSize) {
-      this._box(0.02, 0.001, ROOM.d, tileMat, x, 0.06, 0)
-    }
-    for (let z = -ROOM.d/2; z <= ROOM.d/2; z += tileSize) {
-      this._box(ROOM.w, 0.001, 0.02, tileMat, 0, 0.06, z)
-    }
-
-    // Central runner carpet
-    const carpetMat = this._mat(0x1a1028, 0.95, 0)
-    this._box(2.5, 0.02, ROOM.d - 2, carpetMat, 0, 0.06, 0)
-
-    // Columns (4 pairs along the hall)
-    const colMat = this._mat(COL.trim, 0.6, 0.3)
-    const colPositions = [-10, -4, 4, 10]
-    for (const z of colPositions) {
-      for (const x of [-ROOM.w/2 + 1.5, ROOM.w/2 - 1.5]) {
-        const col = this._box(0.5, ROOM.h, 0.5, colMat, x, ROOM.h/2, z, true)
-        this.walls.push(col)
-
-        // Column cap
-        this._box(0.7, 0.12, 0.7, this._mat(COL.trim, 0.5, 0.4), x, ROOM.h - 0.06, z)
-        // Column base
-        this._box(0.7, 0.12, 0.7, this._mat(COL.trim, 0.5, 0.4), x, 0.06, z)
+        // Meshes named with "col_" prefix become invisible collision walls.
+        // Create simple box meshes in Blender named e.g. "col_wall_north"
+        // and they'll block the player without being visible.
+        if (obj.name.startsWith('col_')) {
+          obj.visible = false
+          this.walls.push(obj)
+        }
       }
-    }
+    })
 
-    // Archway frames (decorative, above column pairs)
-    const archMat = this._mat(COL.trim, 0.5, 0.3)
-    for (const z of colPositions) {
-      this._box(ROOM.w - 3, 0.12, 0.12, archMat, 0, ROOM.h - 0.4, z)
-    }
+    this.scene.add(gltf.scene)
+
+    // GLB lights (KHR_lights_punctual) are already inside gltf.scene —
+    // no extra step needed. _buildFallbackLighting() fills in if there are none.
+
+    this._buildExhibits()
+    this._buildCentrepiece()
+
+    return gltf
   }
 
   _buildExhibits() {
@@ -322,20 +262,27 @@ export class World {
     this._glowLight = glow
   }
 
-  _buildLighting() {
-    // Ambient
-    const ambient = new THREE.AmbientLight(0x1a2535, 0.8)
+  // Only meaningful if the GLB carries no lights of its own
+  _buildFallbackLighting() {
+    // Hemisphere — free gradient fill, sky warm / ground cool
+    const hemi = new THREE.HemisphereLight(0x8ab4d4, 0x1a1a2e, 1.2)
+    this.scene.add(hemi)
+
+    // Ambient base so nothing ever goes fully black
+    const ambient = new THREE.AmbientLight(0x2a3a50, 2.5)
     this.scene.add(ambient)
 
-    // Main ceiling strip lights (rectangles of emissive geometry)
+    // Main ceiling strip lights
     const stripMat = new THREE.MeshStandardMaterial({
       color: 0xfff8ee,
       emissive: 0xfff8ee,
-      emissiveIntensity: 1.2,
+      emissiveIntensity: 1.6,
       roughness: 1,
     })
+
     const lightPositions = [-12, -6, 0, 6, 12]
     for (const z of lightPositions) {
+      // Emissive strip geometry
       const strip = new THREE.Mesh(
         new THREE.BoxGeometry(0.3, 0.05, 2.5),
         stripMat
@@ -343,12 +290,29 @@ export class World {
       strip.position.set(0, ROOM.h - 0.08, z)
       this.scene.add(strip)
 
-      const pt = new THREE.PointLight(COL.warm, 0.9, 12, 1.5)
+      // One casting shadow light per strip (keep shadow maps low-res, 5 is fine)
+      const pt = new THREE.PointLight(COL.warm, 2.2, ROOM.d, 0.5)
       pt.position.set(0, ROOM.h - 0.3, z)
       pt.castShadow = true
-      pt.shadow.mapSize.width  = 512
-      pt.shadow.mapSize.height = 512
+      pt.shadow.mapSize.width  = 256
+      pt.shadow.mapSize.height = 256
+      pt.shadow.bias = -0.002
       this.scene.add(pt)
+
+      // Secondary fill — no shadow cost, widens the spread sideways
+      const fill = new THREE.PointLight(COL.warm, 1.0, ROOM.w * 1.5, 0.8)
+      fill.position.set(0, ROOM.h * 0.6, z)
+      this.scene.add(fill)
+    }
+
+    // Wall wash lights — one per side along the hall length
+    const washColours = [0x1a3a5c, 0x2a1a3c]
+    for (const z of [-8, 0, 8]) {
+      for (const [i, x] of [[-ROOM.w * 0.4, 0], [ROOM.w * 0.4, 1]].entries()) {
+        const wash = new THREE.PointLight(washColours[i % 2], 0.8, ROOM.w, 1)
+        wash.position.set(x, ROOM.h * 0.5, z)
+        this.scene.add(wash)
+      }
     }
   }
 
