@@ -1,0 +1,73 @@
+:root {
+  --env-skybox-size: 1024px;
+  --env-skybox-res: calc(1024px + 2px);
+  --env-skybox-tex: url("images/se_test1.png");
+}
+
+.env-viewport,
+.env-skybox {
+  transform-style: preserve-3d;
+}
+
+.env-viewport {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  overflow: hidden;
+  perspective: 400px;
+}
+
+.env-skybox {
+  width: var(--env-skybox-size);
+  height: var(--env-skybox-size);
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate3d(-50%, -50%, 400px) rotateX(0deg) rotateY(0deg);
+  z-index: -50;
+}
+
+.skybox-ft,
+.skybox-bk,
+.skybox-lf,
+.skybox-rt,
+.skybox-up,
+.skybox-dn {
+  background-image: var(--env-skybox-tex);
+  background-size: 100%;
+  width: var(--env-skybox-res);
+  height: var(--env-skybox-res);
+  position: absolute;
+}
+
+.skybox-ft {
+  background-image: url("images/test1/sky_pos_z.png");
+  transform: translateX(0px) translateY(0px) translateZ(-512px) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+}
+
+.skybox-bk {
+  background-image: url("images/test1/sky_neg_z.png");
+  transform: translateX(0px) translateY(0px) translateZ(512px) rotateX(0deg) rotateY(180deg) rotateZ(0deg);
+}
+
+.skybox-lf {
+  background-image: url("images/test1/sky_pos_x.png"); /**/
+  transform: translateX(512px) translateY(0px) translateZ(0px) rotateX(0deg) rotateY(-90deg) rotateZ(0deg);
+}
+
+.skybox-rt {
+  background-image: url("images/test1/sky_neg_x.png");
+  transform: translateX(-512px) translateY(0px) translateZ(0px) rotateX(0deg) rotateY(90deg) rotateZ(0deg);
+}
+
+.skybox-up {
+  background-image: url("images/test1/sky_pos_y.png"); /**/
+  transform: translateX(0px) translateY(-512px) translateZ(0px) rotateX(-90deg) rotateY(0deg) rotateZ(0deg);
+}
+
+.skybox-dn {
+  background-image: url("images/test1/sky_neg_y.png"); /**/
+  transform: translateX(0px) translateY(512px) translateZ(0px) rotateX(90deg) rotateY(0deg) rotateZ(0deg);
+}

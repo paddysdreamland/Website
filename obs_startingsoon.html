@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link rel="stylesheet" href="styles/obs_scenecards.css">
+        <link rel="stylesheet" href="styles/pd_main.css">
+
+        <script src="scripts/moduleloader.js"></script>
+    </head>
+    
+    <body style="background-color: transparent;">
+        <div class="top-text-wrapper">
+            <div class="top-title">STARTING SOON</div>
+            <div class="top-sub">Waiting for community & friends...</div>
+            <div class="top-logo"></div>
+        </div>
+
+        <div class="obs-time-wrapper">
+            <div id="t" class="obs-time-text">15:00</div>
+        </div>
+
+        <script>
+            (function() {
+            let s = 900;
+            const el = document.getElementById('t');
+            const id = setInterval(function() {
+                s--;
+                const m = Math.floor(s / 60);
+                const sec = s % 60;
+                el.textContent = m + ':' + (sec < 10 ? '0' : '') + sec;
+                if (s <= 0) {
+                clearInterval(id);
+                try {
+                    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                    const o = ctx.createOscillator();
+                    const g = ctx.createGain();
+                    o.connect(g); g.connect(ctx.destination);
+                    o.frequency.value = 880;
+                    g.gain.setValueAtTime(0.3, ctx.currentTime);
+                    g.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.8);
+                    o.start();
+                    o.stop(ctx.currentTime + 0.8);
+                } catch (e) {}
+                }
+            }, 1000);
+            })();
+        </script>
+    </body>
+</html>

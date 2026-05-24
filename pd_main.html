@@ -11,30 +11,47 @@
         <link rel="preload" href="images/showcase/character_paddy_draw_hover.png" as="image">
         <link rel="preload" href="images/showcase/character_aria_astral_hover.png" as="image">
 
-        <link rel="stylesheet" href="css/pd_main.css">
-        <link rel="stylesheet" href="css/pd_environment.css">
+        <link rel="stylesheet" href="styles/pd_main.css">
 
-        <script src="js/pd_default.js" defer></script>
-        <script src="js/pd_auto.js" defer></script>
-        <script src="js/pd_loadingscreen.js" defer></script>
+        <script src="scripts/pd_default.js" defer></script>
+        <script src="scripts/pd_auto.js" defer></script>
+        <script src="scripts/pd_loadingscreen.js" defer></script>
 
-        <script src="js/pd_music.js" defer></script>
-        <script src="js/pd_music_playlist.js" defer></script>
+        <script src="scripts/pd_music.js" defer></script>
+        <script src="scripts/pd_music_playlist.js" defer></script>
 
-        <script src="js/pd_post_storage.js"></script>
-        <script src="js/pd_post_manager.js"></script>
+        <script src="scripts/pd_post_storage.js"></script>
+        <script src="scripts/pd_post_manager.js"></script>
 
-        <script src="js/pd_customization.js" defer></script>
-        <script src="js/pd_skybox.js"></script>
+        <script src="scripts/pd_customization.js" defer></script>
+
+        <script src="scripts/moduleloader.js"></script>
 
         <!-- What even is the point of this? -->
         <script type="application/ld+json">
             {
                 "@context": "https://schema.org",
-                "@type": "Organization",
-                "name": "Paddy's Dreamland™",
-                "url": "https://www.paddysdreamland.com",
-                "logo": "https://www.paddysdreamland.com/images/app_icon_512.png"
+                "@graph": [
+                    {
+                        "@type": "WebSite",
+                        "@id": "https://www.paddysdreamland.com/#website",
+                        "url": "https://www.paddysdreamland.com",
+                        "name": "Paddy's Dreamland™",
+                        "alternateName": "Paddy's Dreamland",
+                        "publisher": { "@id": "https://www.paddysdreamland.com/#organization" }
+                    },
+                    {
+                        "@type": "Organization",
+                        "@id": "https://www.paddysdreamland.com/#organization",
+                        "name": "Paddy's Dreamland™",
+                        "alternateName": "Paddy's Dreamland",
+                        "url": "https://www.paddysdreamland.com",
+                        "logo": {
+                            "@type": "ImageObject",
+                            "url": "https://www.paddysdreamland.com/images/app_icon_512.png"
+                        }
+                    }
+                ]
             }
         </script>
 
@@ -52,6 +69,8 @@
         <meta name="twitter:image" content="https://www.paddysdreamland.com/images/embeds/banner6.png">
         <meta name="twitter:card" content="summary_large_image">
 
+        <meta name="description" content="A digital sanctuary where you're allowed to exist without being judged, fixed, or misunderstood. Game development, music, streams, and a small creative community by Paddy.">
+
         <meta property="og:title" content="Paddy's Dreamland™ — Chat, is this real?">
         <meta property="og:description" content="Project showcases, news, information, and most importantly, Paddy's Dreamland and home.">
         <meta property="og:image" content="https://www.paddysdreamland.com/images/embeds/banner6.png">
@@ -61,16 +80,7 @@
     </head>
 
     <body>
-        <div class="env-viewport">
-            <div class="env-skybox">
-                <div class="skybox-ft"></div>
-                <div class="skybox-bk"></div>
-                <div class="skybox-lf"></div>
-                <div class="skybox-rt"></div>
-                <div class="skybox-up"></div>
-                <div class="skybox-dn"></div>
-            </div>
-        </div>
+        <document file="modules/3d_skybox/main.html"></document>
 
         <div id="website-holder">
             <header id="header-holder">
@@ -298,7 +308,7 @@
                                         </div>
 
                                         <div class="card-credits">
-                                            VRChat Avatar by MiloFox
+                                            VRChat Avatar by MiloFox_
                                         </div>
 
                                         <div class="card-border-up"></div>

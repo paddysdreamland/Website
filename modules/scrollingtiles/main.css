@@ -1,0 +1,59 @@
+.wrapper {
+    width: 100vw;
+    height: 100vh;
+}
+
+/* Remove the animation: lines from .background, .bg-normal, .bg-noise */
+/* Keep background-size as static values */
+
+.debug {
+    position: fixed;
+    bottom: 12px;
+    left: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 8px 12px;
+    border-radius: 4px;
+    white-space: pre;
+    pointer-events: none;
+}
+
+.background,
+.bg-normal,
+.bg-noise,
+.bg-vignette {
+    width: 100vw; height: 100vh;
+    position: fixed; left: -50%; top: -50%;
+    transform: translate(50%, 50%);
+
+    mask-image: url("../../images/modules/scrollingtiles/background_mask.png");
+    mask-mode: luminance;
+}
+
+.background {
+    background-image: url("../../images/modules/scrollingtiles/pd_logo_checkerboard2.png");
+    background-position: center center;
+    background-size: calc(270px);
+    image-rendering: pixelated;
+}
+
+.bg-normal {
+    background-image: url("../../images/modules/scrollingtiles/pd_logo_checkerboard1_normal.png");
+    background-size: calc(270px * 2);
+    mix-blend-mode: multiply;
+}
+
+.bg-noise {
+    background-image: url("../../images/modules/scrollingtiles/BrandColorNoise_BW.png");
+    background-size: calc(270px * 64);
+    mix-blend-mode: multiply;
+    opacity: 0;
+}
+
+.bg-vignette {
+    background-image: url("../../images/modules/scrollingtiles/1920x1080_vignette.png");
+    mix-blend-mode: multiply;
+}
