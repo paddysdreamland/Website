@@ -34,7 +34,13 @@
 .skybox-lf,
 .skybox-rt,
 .skybox-up,
-.skybox-dn {
+.skybox-dn,
+.skybox-ft-low,
+.skybox-bk-low,
+.skybox-lf-low,
+.skybox-rt-low,
+.skybox-up-low,
+.skybox-dn-low {
   background-image: var(--env-skybox-tex);
   background-size: 100%;
   width: var(--env-skybox-res);
@@ -69,5 +75,35 @@
 
 .skybox-dn {
   background-image: url("images/test1/sky_neg_y.png"); /**/
+  transform: translateX(0px) translateY(512px) translateZ(0px) rotateX(90deg) rotateY(0deg) rotateZ(0deg);
+}
+
+.skybox-ft-low {
+  background-image: url("images/test2/sky_pos_z.png");
+  transform: translateX(0px) translateY(0px) translateZ(-512px) rotateX(0deg) rotateY(0deg) rotateZ(0deg);
+}
+
+.skybox-bk-low {
+  background-image: url("images/test2/sky_neg_z.png");
+  transform: translateX(0px) translateY(0px) translateZ(512px) rotateX(0deg) rotateY(180deg) rotateZ(0deg);
+}
+
+.skybox-lf-low {
+  background-image: url("images/test2/sky_pos_x.png"); /**/
+  transform: translateX(512px) translateY(0px) translateZ(0px) rotateX(0deg) rotateY(-90deg) rotateZ(0deg);
+}
+
+.skybox-rt-low {
+  background-image: url("images/test2/sky_neg_x.png");
+  transform: translateX(-512px) translateY(0px) translateZ(0px) rotateX(0deg) rotateY(90deg) rotateZ(0deg);
+}
+
+.skybox-up-low {
+  background-image: url("images/test2/sky_pos_y.png"); /**/
+  transform: translateX(0px) translateY(-512px) translateZ(0px) rotateX(-90deg) rotateY(0deg) rotateZ(0deg);
+}
+
+.skybox-dn-low {
+  background-image: url("images/test2/sky_neg_y.png"); /**/
   transform: translateX(0px) translateY(512px) translateZ(0px) rotateX(90deg) rotateY(0deg) rotateZ(0deg);
 }
