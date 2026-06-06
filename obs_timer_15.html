@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <link rel="stylesheet" href="styles/obs_scenecards.css">
+        <link rel="stylesheet" href="styles/pd_main.css">
+
+        <script src="scripts/moduleloader.js"></script>
+    </head>
+    
+    <body style="background-color: transparent;">
+        <div class="obs-time-wrapper">
+            <div id="t" class="obs-time-text">5:00</div>
+        </div>
+
+        <script>
+            (function() {
+            let s = 300;
+            const el = document.getElementById('t');
+            const id = setInterval(function() {
+                s--;
+                const m = Math.floor(s / 60);
+                const sec = s % 60;
+                el.textContent = m + ':' + (sec < 10 ? '0' : '') + sec;
+                if (s <= 0) {
+                clearInterval(id);
+                try {
+                    
+                } catch (e) {}
+                }
+            }, 1000);
+            })();
+        </script>
+    </body>
+</html>

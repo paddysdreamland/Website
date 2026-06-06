@@ -1,94 +1,289 @@
-body {
-    background-color: rgb(64, 64, 64);
-    padding: 0; margin: 0;
-}
-
 :root {
-    --widget-padding: 32px;
+    --wrapper-padding: 32px;
+
     --chat-width: 512px;
-    --chat-height: 256px;
+    --chat-height: 960px;
+
+    --msg-border-size: 4px;
+    --msg-drop-shadow: drop-shadow(0px 0px 2px rgba(0, 0, 0, 0.5));
 }
 
 .wrapper-bl {
-    background-image: url("../images/streams/widgets/jte_chatframe.png");
-    width: var(--chat-width); height: var(--chat-height);
-    position: fixed;
-    bottom: var(--widget-padding);
-    left: var(--widget-padding);
-
-    filter: drop-shadow(0px 0px 4px black);
+    position: fixed; bottom: 0px; left: 0px;
 }
 
 .chat-wrapper {
-    -webkit-mask-image: url("../images/streams/widgets/jte_chatframe_mask.png");
-    mask-image: url("../images/streams/widgets/jte_chatframe_mask.png");
-    -webkit-mask-size: cover;
-    mask-size: cover;
-    mask-mode: luminance;
-
+    mask-image: linear-gradient(to top, white 0%, white 80%, transparent 100%);
     width: var(--chat-width); height: var(--chat-height);
-    display: flex; flex-direction: column-reverse; gap: 4px;
-    padding: 6px 0px; box-sizing: border-box;
-    overflow: hidden;
+    padding: var(--wrapper-padding);
+
+    display: flex; flex-direction: column-reverse;
+    align-items: flex-start; gap: 4px;
 }
 
 .msg-wrapper {
-    background-color: rgba(0, 255, 0, 0);
-    display: flex;
-    flex-direction: column;
+    background: linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0.5) 0%,
+        rgba(0, 0, 0, 0) 100%
+    ), var(--holder-background-image);
+
+    border-radius: 4px;
+    border-left: 4px solid var(--msg-user-color, rgb(192, 192, 192));
+
+    padding-left: var(--msg-border-size);
+    padding-right: calc(var(--msg-border-size) * 2);
+
+    display: flex; flex-direction: column;
 }
 
 .msg-author,
-.msg-content {
-    color: white;
-    font-family: "Tahoma"; font-size: 16px;
+.msg-content,
+.presence-text {
+    color: rgb(255, 255, 255);
+    font-family: "Tahoma";
+    font-size: 16px;
+    min-height: 20px;
+    filter: var(--msg-drop-shadow);
 }
 
 .msg-author {
-    color: cyan;
+    color: rgb(192, 192, 192);
     font-weight: bold;
 }
 
-.msg-content {
+.msg-emote {
+    height: 16px;
+    top: 2px;
+}
+
+/* ─── Badges ────────────────────────────────────────────────────────── */
+.msg-badges {
+    display: inline-flex;
+    height: 12px;
+    margin-right: 4px;
+    gap: 2px;
+}
+
+.msg-badge {
+    width: 12px; aspect-ratio: 1 / 1;
+}
+
+/* ─── Tags ──────────────────────────────────────────────────────────── */
+.msg-firstmsg-tag,
+.msg-bits-tag {
+    background-color: var(--msg-user-color, rgb(0, 255, 192));
+    color: black;
+    font-size: 10px;
+    font-weight: 900;
+    padding: 0px 4px;
+    margin-left: 4px;
+    border-radius: 2px;
+    top: -2px;
+}
+
+/* ─── Highlighted Messages (channel points) ─────────────────────────── */
+.msg-highlight {
+    background: linear-gradient(
+        to right,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 50%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+    ), var(--holder-background-mask);
+}
+
+.msg-highlight::after {
+    content: ""; position: absolute; inset: 0;
+
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 100%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+    ); filter: blur(8px); z-index: -1;
+}
+
+/* ─── First-time chatter ────────────────────────────────────────────── */
+.msg-firstmsg {
+    background: linear-gradient(
+        to right,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 50%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+    ), var(--holder-background-mask);
+}
+
+.msg-firstmsg::after {
+    content: ""; position: absolute; inset: 0;
+
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 100%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+    ); filter: blur(4px); z-index: -1;
+}
+
+/* ─── /me actions ───────────────────────────────────────────────────── */
+.msg-action .msg-content {
+    font-style: italic;
+}
+
+/* ─── Bits / Cheers ─────────────────────────────────────────────────── */
+.msg-bits {
+    background: linear-gradient(
+        to right,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 50%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+    ), var(--holder-background-mask);
+}
+
+.msg-bits::after {
+    content: ""; position: absolute; inset: 0;
+
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 100%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+    ); filter: blur(4px); z-index: -1;
+}
+
+/* ─── Deleted / Timed-out messages ──────────────────────────────────── */
+.msg-deleted {
+    width: 150px; height: 20px;
+    opacity: 1;
+}
+
+.msg-wrapper.msg-deleted {
+    border-left: var(--msg-border-size) solid rgb(192, 192, 192) !important;
+}
+
+.msg-deleted::after {
+    content: "MESSAGE DELETED"; position: absolute; inset: 0;
+    color: rgb(192, 192, 192);
+    font-family: "Tahoma";
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    align-content: center;
+
+    filter: var(--msg-drop-shadow);
+}
+
+.msg-deleted > .msg-author,
+.msg-deleted > .msg-content {
+    display: none;
+}
+
+/* ─── Presence / Join events ────────────────────────────────────────── */
+:root {
+    --presence-color: 128, 128, 128;
+}
+
+.presence-event {
+    border-left: var(--msg-border-size) solid rgb(192, 192, 192);
+}
+
+.presence-text {
+    color: rgb(192, 192, 192);
+    font-style: italic;
+}
+
+.presence-user {
+    color: rgb(255, 255, 255);
+    font-weight: bold;
+}
+
+/* ─── Console / Log events ──────────────────────────────────────────── */
+:root {
+    --log-hint-color: 128, 192, 192;
+    --log-warn-color: 255, 255, 192;
+    --log-error-color: 255, 192, 192;
+}
+
+.log-event {
+    border-color: transparent;
+    flex-direction: row;
+}
+
+.msg-wrapper.log-hint {
+    background: linear-gradient(
+        to right,
+        rgba(var(--log-hint-color), 0.5) 0%,
+        rgba(var(--log-hint-color), 0) 100%
+    ), var(--holder-background-mask);
+}
+
+.msg-wrapper.log-warn {
+    background: linear-gradient(
+        to right,
+        rgba(var(--log-warn-color), 0.5) 0%,
+        rgba(var(--log-warn-color), 0) 100%
+    ), var(--holder-background-mask);
+}
+
+.msg-wrapper.log-error {
+    background: linear-gradient(
+        to right,
+        rgba(var(--log-error-color), 0.5) 0%,
+        rgba(var(--log-error-color), 0) 100%
+    ), var(--holder-background-mask);
+}
+
+.msg-icon {
+    background-color: rgb(192, 192, 192);
+    background-position: center center;
+    background-repeat: no-repeat;
+    flex: 0 0 20px; width: 20px; height: auto;
+    border-radius: 4px 0 0 4px;
+    left: -8px;
+}
+
+.log-hint > .msg-icon {
+    background-color: rgb(128, 192, 255);
+    background-image: url("../images/silk/information.png");
+}
+
+.log-warn > .msg-icon {
+    background-color: rgb(255, 255, 192);
+    background-image: url("../images/silk/error.png");
+}
+
+.log-error > .msg-icon {
+    background-color: rgb(255, 192, 192);
+    background-image: url("../images/silk/exclamation.png");
+}
+
+.log-event > .msg-content {
     
 }
 
-#chat-nomsg-overlay {
-    background-color: rgba(0, 0, 0, 0);
-    width: 100%; height: 100%;
-    transition: opacity 0.5s ease;
+/* ─── Message slot (two-helper entrance) ────────────────────────────── */
+.msg-slot {
+    overflow: visible;
+    max-height: 0;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+
+    animation: slot-open 0.4s ease-out forwards;  /* hold until JS sets none */
 }
 
-#chat-nomsg-overlay.fade-out {
-    opacity: 0;
-    pointer-events: none;
+@keyframes slot-open {
+    to { 
+        max-height: var(--open-h, 256px);
+    }
 }
 
-.chat-nomsg-text {
-    color: white;
-    font-family: "Tahoma"; font-size: 20px;
-    position: absolute; left: 50%; top: calc(100% / 8 * 5);
-    transform: translate(-50%, -50%);
+.msg-slot-inner {
+    animation: slot-slide 0.8s ease-in-out;
 }
 
-.chat-hint,
-.chat-vanity1,
-.chat-vanity2 {
-    color: white;
-    font-family: "Tahoma"; font-size: 12px;
-}
-
-.chat-hint {
-    position: absolute;
-    bottom: -14px;
-}
-
-.chat-vanity1 {
-    position: absolute;
-    top: -14px;
-}
-
-.chat-vanity2 {
-    position: absolute;
-    top: 50px; right: 0;
+@keyframes slot-slide {
+    0% {
+        transform: translateX(var(--slide-from, -200%));
+    } 60% {
+        transform: translateX(10px);
+    } 80% {
+        transform: translateX(-5px); 
+    } 100% {
+        transform: translateX(0px); 
+    }
 }

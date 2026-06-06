@@ -1,3 +1,7 @@
+:root {
+    --obs-color-scheme: 0, 255, 192;
+}
+
 * {
     margin: 0; padding: 0;
 }
@@ -5,10 +9,6 @@
 body {
     background-color: black;
     overflow: hidden;
-}
-
-:root {
-    --obs-color-scheme: 0, 255, 192;
 }
 
 .top-text-wrapper {
@@ -70,6 +70,8 @@ body {
 
     border-top: 2px solid rgba(var(--obs-color-scheme), 0.75);
     border-bottom: 2px solid rgba(var(--obs-color-scheme), 0.75);
+
+    box-shadow: 0px 0px 24px rgba(var(--obs-color-scheme), 1);
 }
 
 .obs-time-text {

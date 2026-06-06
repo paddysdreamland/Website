@@ -5,6 +5,7 @@
   --website-width: var(--custom-width);
   --holder-background-color: rgba(0, 0, 0, 0.75);
   --holder-background-image: url(../images/patterns/grid1110_25.png);
+  --holder-background-mask: url(../images/patterns/grid1110_25_mask.png);
   --holder-border-color: rgba(0, 0, 0, 0.5);
   --holder-border-thickness: 2px;
   --custom-width: 1024px;
