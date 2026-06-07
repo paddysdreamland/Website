@@ -1,6 +1,7 @@
 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
 
 const musicButton = document.getElementById("music-start");
+const musicTransition = document.getElementById("music-transition");
 const musicReset = document.getElementById("music-reset");
 const musicDownload = document.getElementById("music-download");
 
@@ -24,6 +25,9 @@ const volumeBars = [
 var alreadyPlaying = false;
 var trackLength;
 let gainNodes = [];
+let sourceNodes = [];
+var loopAnchorTime = 0;   // audioContext time at which the current loop's position 0 occurred
+var currentTrackBPM = null;
 
 const volumeLoadingBar = document.getElementById("volume-loading-bar");
 const volumeLoadingPercentage = document.getElementById("volume-loading-percentage");
@@ -80,35 +84,49 @@ function getBPMFromTrackName(trackName) {
     return bpmMatch ? parseFloat(bpmMatch[1].replace("_", ".")) : null;
 }
 
+// Colors a select's track options by how their BPM relates to a reference BPM:
+// green = exact match, yellow = half/double, red = anything else. Options without a
+// BPM (district/mission headers) are left untouched; a null reference clears coloring.
+function colorSelectorByBPM(selectorElement, referenceBPM) {
+    Array.from(selectorElement.options).forEach(option => {
+        const optionBPM = getBPMFromTrackName(option.value);
+        if (!optionBPM) return;
+
+        if (!referenceBPM) {
+            option.style.color = "";
+            return;
+        }
+
+        // Apply a tolerance for floating-point comparisons
+        const isExactMatch = Math.abs(optionBPM - referenceBPM) < 0.01;
+        const isHalfOrDouble = Math.abs(optionBPM - referenceBPM / 2) < 0.01 || Math.abs(optionBPM - referenceBPM * 2) < 0.01;
+
+        if (isExactMatch) {
+            option.style.color = "rgb(128, 255, 128)"; // Greenish for exact match
+        } else if (isHalfOrDouble) {
+            option.style.color = "rgb(255, 255, 128)"; // Yellowish for half or double
+        } else {
+            option.style.color = "rgb(255, 128, 128)"; // Reddish for other
+        }
+    });
+}
+
 function updateLayerSelectorColors() {
     const mainTrackBPM = getBPMFromTrackName(trackSelector.value);
     if (!mainTrackBPM) return;
 
-    const layerSelectors = [
+    [
         document.getElementById("layers-selector1"),
         document.getElementById("layers-selector2"),
         document.getElementById("layers-selector3"),
         document.getElementById("layers-selector4")
-    ];
+    ].forEach(layerSelector => colorSelectorByBPM(layerSelector, mainTrackBPM));
+}
 
-    layerSelectors.forEach(layerSelector => {
-        Array.from(layerSelector.options).forEach(option => {
-            const optionBPM = getBPMFromTrackName(option.value);
-            if (optionBPM) {
-                // Apply a tolerance for floating-point comparisons
-                const isExactMatch = Math.abs(optionBPM - mainTrackBPM) < 0.01;
-                const isHalfOrDouble = Math.abs(optionBPM - mainTrackBPM / 2) < 0.01 || Math.abs(optionBPM - mainTrackBPM * 2) < 0.01;
-
-                if (isExactMatch) {
-                    option.style.color = "rgb(128, 255, 128)"; // Greenish for exact match
-                } else if (isHalfOrDouble) {
-                    option.style.color = "rgb(255, 255, 128)"; // Yellowish for half or double
-                } else {
-                    option.style.color = "rgb(255, 128, 128)"; // Reddish for other
-                }
-            }
-        });
-    });
+// During playback, colors the main track selector relative to the playing track's BPM
+// so green/yellow options flag beat-syncable transition targets. Clears when stopped.
+function updateTrackSelectorColors() {
+    colorSelectorByBPM(trackSelector, alreadyPlaying ? currentTrackBPM : null);
 }
 
 trackSelector.addEventListener("change", () => {
@@ -122,7 +140,11 @@ trackSelector.addEventListener("change", () => {
     updateLayerSelectorColors(); // Update colors based on the selected track BPM
 });
 
-async function playSelectedTrack(trackKey) {
+// Loads all 8 layers for the given track (respecting per-layer selector overrides),
+// creates panned/looping sources started at volume 0, and returns the new node sets.
+// When syncReference ({ anchorTime, length }) is supplied, the new loops start at the
+// same playback phase as the reference track so BPM-matched transitions stay beat-aligned.
+async function loadTrackSources(trackKey, syncReference = null) {
     const layerSelectors = [
         document.getElementById("layers-selector1"),
         document.getElementById("layers-selector2"),
@@ -141,15 +163,25 @@ async function playSelectedTrack(trackKey) {
         ];
     }));
 
-    loadingIndicator.style.display = "none";
-    gainNodes = [];
-    trackLength = layers[0][0]?.duration || 0;
+    const duration = layers[0][0]?.duration || 0;
+    const startTime = audioContext.currentTime;
 
-    layers.forEach((bufferPair, groupIndex) => {
+    // Compute the phase offset (in seconds) at the actual start moment, after loading,
+    // so the new track picks up exactly where the reference track currently is.
+    let startOffset = 0;
+    if (syncReference && syncReference.length > 0 && duration > 0) {
+        let phase = (startTime - syncReference.anchorTime) % syncReference.length;
+        if (phase < 0) phase += syncReference.length;
+        startOffset = phase % duration;
+    }
+
+    const sources = [];
+    const gains = [];
+
+    layers.forEach((bufferPair) => {
         bufferPair.forEach((buffer, index) => {
             const source = audioContext.createBufferSource();
             const gainNode = audioContext.createGain();
-            gainNodes.push(gainNode);
             source.buffer = buffer;
 
             const panner = audioContext.createStereoPanner();
@@ -157,30 +189,38 @@ async function playSelectedTrack(trackKey) {
 
             gainNode.gain.value = 0;
             source.connect(panner).connect(gainNode).connect(audioContext.destination);
-            source.start(0);
             source.loop = true;
+            source.start(startTime, startOffset);
+
+            sources.push(source);
+            gains.push(gainNode);
         });
     });
 
-    if (layerGroup1Muted == false) {
-        fadeLayerVolume(0, 1, trackLength / 32);
-        fadeLayerVolume(1, 1, trackLength / 32);
-    }
+    return { sources, gains, duration, startTime, startOffset };
+}
 
-    if (layerGroup2Muted == false) {
-        fadeLayerVolume(2, 1, trackLength / 32);
-        fadeLayerVolume(3, 1, trackLength / 32);
+// Fades each layer group toward its current muted state (0 if muted, 1 if active).
+function applyMuteStateWithFade(fadeDuration) {
+    for (let groupIndex = 0; groupIndex < 4; groupIndex++) {
+        const targetVolume = layerGroupsMuted[groupIndex] ? 0 : 1;
+        fadeLayerVolume(groupIndex * 2, targetVolume, fadeDuration);
+        fadeLayerVolume((groupIndex * 2) + 1, targetVolume, fadeDuration);
     }
+}
 
-    if (layerGroup3Muted == false) {
-        fadeLayerVolume(4, 1, trackLength / 32);
-        fadeLayerVolume(5, 1, trackLength / 32);
-    }
+async function playSelectedTrack(trackKey) {
+    const { sources, gains, duration, startTime, startOffset } = await loadTrackSources(trackKey);
 
-    if (layerGroup4Muted == false) {
-        fadeLayerVolume(6, 1, trackLength / 32);
-        fadeLayerVolume(7, 1, trackLength / 32);
-    }
+    loadingIndicator.style.display = "none";
+    sourceNodes = sources;
+    gainNodes = gains;
+    trackLength = duration;
+    loopAnchorTime = startTime - startOffset;
+    currentTrackBPM = getBPMFromTrackName(trackKey);
+    updateTrackSelectorColors();
+
+    applyMuteStateWithFade(trackLength / 32);
 
     if (document.getElementById("starter-layer-checkbox5").checked == true) {
         startDynamicHandling();
@@ -189,12 +229,82 @@ async function playSelectedTrack(trackKey) {
     updateVolumeBars();
 }
 
+// Crossfades from the currently playing track to the newly selected one,
+// keeping the active/muted layer groups consistent across the transition.
+async function transitionToTrack() {
+    if (!alreadyPlaying) return;
+
+    const selectedTrack = trackSelector.value;
+    if (!selectedTrack) {
+        alert("Please select a track to transition to.");
+        return;
+    }
+
+    loadPercentage = 0;
+    volumeLoadingBar.style.width = "0%";
+    volumeLoadingPercentage.innerHTML = "0%";
+    loadingIndicator.style.display = "block";
+
+    trackName = selectedTrack.trim();
+    trackNameClean = trackName.split('.').pop();
+
+    // Beat-sync the transition only when the target is BPM-compatible (green = exact,
+    // yellow = half/double); incompatible (red) targets just start from the top.
+    const targetBPM = getBPMFromTrackName(selectedTrack);
+    let syncReference = null;
+    if (currentTrackBPM && targetBPM && trackLength > 0) {
+        const isExactMatch = Math.abs(targetBPM - currentTrackBPM) < 0.01;
+        const isHalfOrDouble = Math.abs(targetBPM - currentTrackBPM / 2) < 0.01 || Math.abs(targetBPM - currentTrackBPM * 2) < 0.01;
+        if (isExactMatch || isHalfOrDouble) {
+            syncReference = { anchorTime: loopAnchorTime, length: trackLength };
+        }
+    }
+
+    const oldSources = sourceNodes;
+    const oldGainNodes = gainNodes;
+
+    const { sources, gains, duration, startTime, startOffset } = await loadTrackSources(selectedTrack, syncReference);
+
+    loadingIndicator.style.display = "none";
+
+    const fadeDuration = duration / 8;
+
+    // Swap globals to the new nodes, then crossfade old out and new in together.
+    sourceNodes = sources;
+    gainNodes = gains;
+    trackLength = duration;
+    loopAnchorTime = startTime - startOffset;
+    currentTrackBPM = targetBPM;
+    updateTrackSelectorColors();
+
+    applyMuteStateWithFade(fadeDuration);
+    oldGainNodes.forEach(gainNode => rampGain(gainNode, 0, fadeDuration));
+
+    // Once the old track has faded out, stop and release its nodes.
+    setTimeout(() => {
+        oldSources.forEach(source => {
+            try { source.stop(); } catch (e) { /* already stopped */ }
+            source.disconnect();
+        });
+        oldGainNodes.forEach(gainNode => gainNode.disconnect());
+    }, (fadeDuration * 1000) + 100);
+
+    // Restart dynamic handling so its interval matches the new track length.
+    if (document.getElementById("starter-layer-checkbox5").checked == true) {
+        startDynamicHandling();
+    }
+}
+
+function rampGain(gainNode, targetVolume, fadeDuration) {
+    const currentTime = audioContext.currentTime;
+    gainNode.gain.cancelScheduledValues(currentTime);
+    gainNode.gain.setValueAtTime(gainNode.gain.value, currentTime);
+    gainNode.gain.linearRampToValueAtTime(targetVolume, currentTime + fadeDuration);
+}
+
 function fadeLayerVolume(layerIndex, targetVolume, fadeDuration) {
     if (gainNodes[layerIndex]) {
-        const currentTime = audioContext.currentTime;
-        gainNodes[layerIndex].gain.cancelScheduledValues(currentTime);
-        gainNodes[layerIndex].gain.setValueAtTime(gainNodes[layerIndex].gain.value, currentTime);
-        gainNodes[layerIndex].gain.linearRampToValueAtTime(targetVolume, currentTime + fadeDuration);
+        rampGain(gainNodes[layerIndex], targetVolume, fadeDuration);
     }
 }
 
@@ -381,6 +491,10 @@ musicButton.addEventListener("click", async function () {
         resetVariables();
         loadingIndicator.style.display = "block";
 
+        musicButton.style.display = "none";
+        musicTransition.style.display = "";
+        musicReset.style.display = "";
+
         trackName = selectedTrack.trim();
         trackNameClean = trackName.split('.').pop();
 
@@ -390,17 +504,59 @@ musicButton.addEventListener("click", async function () {
     }
 });
 
+musicTransition.addEventListener("click", transitionToTrack);
+
+function setLayerGroupMuted(groupIndex, muted) {
+    const targetVolume = muted ? 0 : 1;
+    fadeLayerVolume(groupIndex * 2, targetVolume, trackLength / 8);
+    fadeLayerVolume((groupIndex * 2) + 1, targetVolume, trackLength / 8);
+
+    layerGroupsMuted[groupIndex] = muted;
+    if (groupIndex === 0) layerGroup1Muted = muted;
+    else if (groupIndex === 1) layerGroup2Muted = muted;
+    else if (groupIndex === 2) layerGroup3Muted = muted;
+    else if (groupIndex === 3) layerGroup4Muted = muted;
+}
+
+[1, 2, 3, 4].forEach(groupNumber => {
+    document.getElementById(`starter-layer-checkbox${groupNumber}`).addEventListener("change", function () {
+        if (!alreadyPlaying) return;
+        setLayerGroupMuted(groupNumber - 1, !this.checked);
+    });
+});
+
+document.getElementById("starter-layer-checkbox5").addEventListener("change", function () {
+    if (!alreadyPlaying) return;
+    if (this.checked) {
+        startDynamicHandling();
+    } else {
+        clearInterval(dynamicHandlingInterval);
+    }
+});
+
 musicReset.addEventListener("click", function () {
     loadPercentage = 0;
     volumeLoadingBar.style.width = parseInt(0) + "%";
     volumeLoadingPercentage.innerHTML = parseInt(0) + "%";
 
+    sourceNodes.forEach(source => {
+        try { source.stop(); } catch (e) { /* already stopped */ }
+        source.disconnect();
+    });
+    sourceNodes = [];
     gainNodes.forEach(gainNode => gainNode.disconnect());
     gainNodes = [];
     alreadyPlaying = false;
     clearInterval(dynamicHandlingInterval);
     updateVolumeBars();
     resetVariables();
+
+    currentTrackBPM = null;
+    updateTrackSelectorColors();
+
+    musicButton.style.display = "";
+    musicTransition.style.display = "none";
+    musicReset.style.display = "none";
 });
 
 // Download Feature
