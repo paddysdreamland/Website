@@ -1,5 +1,5 @@
 const postSignatures = {
-    drawing_pad: "Drawing Pad (Administrator)"
+    drawing_pad: "Paddy-V (Founder)"
 }
 
 const typeClasses = {
@@ -23,7 +23,7 @@ const newsPosts = {
             { type: "paragraph", content: "Hello again! This is more of a repeat announcement I did in the community server during Christmas, so everyone outside of it can get a glimpse of where the Dreamland is currently going." },
             { type: "paragraph", content: "During October, up until December, I have been hard at work preparing a streaming environment, both hardware and software-related, to stream Dreamland's future development sessions and other miscellaneous activities on Twitch. This allows more fun interactions with the community such as real-time chats, backseating, feedback, suggestions, and so on, instead of just receiving vague development updates in the community server." },
             { type: "paragraph", content: "On the 2nd of January, we did our first test stream, which revealed more technical and workflow issues than what was known before said stream. While we're at it, I'll keep on improving the experience and doing stress tests until everything begins to run smoothly, so we can then finally focus on actual big themes and topics." },
-            { type: "paragraph", content: "We'll keep on going and going, come visit us sometime! <a href=\"https://www.twitch.tv/paddysdreamland/about\">We'll be here.</a>" },
+            { type: "paragraph", content: "We'll keep on going and going, come visit us sometime! <a href=\"https://www.twitch.tv/paddysdreamland/about\">We'll be here</a>." },
         ],
         postImages: {},
         postSignature: postSignatures.drawing_pad,
