@@ -26,8 +26,16 @@ var alreadyPlaying = false;
 var trackLength;
 let gainNodes = [];
 let sourceNodes = [];
-var loopAnchorTime = 0;   // audioContext time at which the current loop's position 0 occurred
-var currentTrackBPM = null;
+var currentTrackBPM = null;    // effective (sounding) tempo of the mix, used for selector coloring
+
+// Tempo-mixing state. The mix runs at masterTempo (BPM); every track is played at
+// playbackRate = masterTempo / nativeBPM so differing-BPM tracks stay beat-locked.
+// A running beat count lets new tracks be dropped in on the beat.
+var masterTempo = null;
+var beatRefTime = 0;           // audioContext time of the beat reference
+var beatRefBeats = 0;          // beats elapsed at beatRefTime (mix runs at constant masterTempo since then)
+var tempoGlideToken = 0;       // invalidates pending tempo-glide re-anchors when superseded
+const tempoGlideDuration = 4;  // seconds to glide the mix to a new track's native tempo (Adapt mode)
 
 const volumeLoadingBar = document.getElementById("volume-loading-bar");
 const volumeLoadingPercentage = document.getElementById("volume-loading-percentage");
@@ -140,11 +148,25 @@ trackSelector.addEventListener("change", () => {
     updateLayerSelectorColors(); // Update colors based on the selected track BPM
 });
 
+// Total beats elapsed on the running mix clock (the mix runs at constant masterTempo since beatRefTime).
+function currentBeats() {
+    if (!masterTempo) return 0;
+    return beatRefBeats + (audioContext.currentTime - beatRefTime) * masterTempo / 60;
+}
+
+// The power-of-two multiple of mixTempo nearest (geometrically) to nativeBPM. Octave multiples stay
+// beat-aligned, so matching to the nearest octave keeps a layer near its own speed while staying synced.
+function nearestOctaveTempo(mixTempo, nativeBPM) {
+    const k = Math.round(Math.log2(nativeBPM / mixTempo));
+    return mixTempo * Math.pow(2, k);
+}
+
 // Loads all 8 layers for the given track (respecting per-layer selector overrides),
 // creates panned/looping sources started at volume 0, and returns the new node sets.
-// When syncReference ({ anchorTime, length }) is supplied, the new loops start at the
-// same playback phase as the reference track so BPM-matched transitions stay beat-aligned.
-async function loadTrackSources(trackKey, syncReference = null) {
+// options:
+//   targetTempo – tempo to play it at; with the native BPM this sets playbackRate (pitch-shifts)
+//   sync        – when true, the loops start on the current mix beat so they stay beat-locked
+async function loadTrackSources(trackKey, { targetTempo = null, sync = false } = {}) {
     const layerSelectors = [
         document.getElementById("layers-selector1"),
         document.getElementById("layers-selector2"),
@@ -152,9 +174,15 @@ async function loadTrackSources(trackKey, syncReference = null) {
         document.getElementById("layers-selector4")
     ];
 
-    const layers = await Promise.all(layerSelectors.flatMap(async (layerSelector, groupIndex) => {
-        const selectedLayerTrackKey = layerSelector.value || trackKey;
-        const selectedLayerKeys = selectedLayerTrackKey.split('.');
+    // Each layer group can be a different track with its own BPM. The first group is the
+    // master loop (it defines the loop length and the mix's native tempo). Every group is
+    // tempo-matched to the mix tempo *independently*, so only off-tempo layers get pitch-shifted.
+    const groupKeys = layerSelectors.map(selector => selector.value || trackKey);
+    const groupBPMs = groupKeys.map(getBPMFromTrackName);
+    const nativeBPM = groupBPMs[0];
+
+    const layers = await Promise.all(groupKeys.map(async (groupKey, groupIndex) => {
+        const selectedLayerKeys = groupKey.split('.');
         const selectedLayerTrack = music[selectedLayerKeys[0]][selectedLayerKeys[1]][selectedLayerKeys[2]];
 
         return [
@@ -166,23 +194,41 @@ async function loadTrackSources(trackKey, syncReference = null) {
     const duration = layers[0][0]?.duration || 0;
     const startTime = audioContext.currentTime;
 
-    // Compute the phase offset (in seconds) at the actual start moment, after loading,
-    // so the new track picks up exactly where the reference track currently is.
-    let startOffset = 0;
-    if (syncReference && syncReference.length > 0 && duration > 0) {
-        let phase = (startTime - syncReference.anchorTime) % syncReference.length;
-        if (phase < 0) phase += syncReference.length;
-        startOffset = phase % duration;
-    }
+    // Mix tempo to play at: an explicit target (a transition), else the master group's own BPM.
+    const mixTempo = targetTempo || nativeBPM;
 
     const sources = [];
     const gains = [];
+    const groupRates = [];
+    const groupOffsets = [];
 
-    layers.forEach((bufferPair) => {
+    layers.forEach((bufferPair, groupIndex) => {
+        const groupBPM = groupBPMs[groupIndex];
+        const groupDuration = bufferPair[0]?.duration || 0;
+
+        // Tempo-match to the nearest octave of the mix tempo (not the mix tempo itself), so a fast
+        // layer plays near its own speed at double/quad time instead of being dragged way down.
+        const matchedTempo = (groupBPM && mixTempo) ? nearestOctaveTempo(mixTempo, groupBPM) : mixTempo;
+        const groupRate = (groupBPM && matchedTempo) ? matchedTempo / groupBPM : 1;
+        groupRates.push(groupRate);
+
+        // Beat-align each group's loop start to the running mix clock. The group runs at `octave`
+        // times the grid's beat rate (its tempo is octave*mixTempo), so scale the beat phase by it.
+        let groupOffset = 0;
+        if (sync && groupBPM && groupDuration > 0) {
+            const loopBeats = groupDuration * groupBPM / 60;
+            const octave = mixTempo ? matchedTempo / mixTempo : 1;
+            let phase = (currentBeats() * octave) % loopBeats;
+            if (phase < 0) phase += loopBeats;
+            groupOffset = (phase * 60 / groupBPM) % groupDuration;
+        }
+        groupOffsets.push(groupOffset);
+
         bufferPair.forEach((buffer, index) => {
             const source = audioContext.createBufferSource();
             const gainNode = audioContext.createGain();
             source.buffer = buffer;
+            source.playbackRate.value = groupRate;
 
             const panner = audioContext.createStereoPanner();
             panner.pan.value = index === 0 ? -1 : 1;
@@ -190,14 +236,14 @@ async function loadTrackSources(trackKey, syncReference = null) {
             gainNode.gain.value = 0;
             source.connect(panner).connect(gainNode).connect(audioContext.destination);
             source.loop = true;
-            source.start(startTime, startOffset);
+            source.start(startTime, groupOffset);
 
             sources.push(source);
             gains.push(gainNode);
         });
     });
 
-    return { sources, gains, duration, startTime, startOffset };
+    return { sources, gains, duration, startTime, startOffset: groupOffsets[0], rate: groupRates[0], nativeBPM, groupBPMs, groupRates };
 }
 
 // Fades each layer group toward its current muted state (0 if muted, 1 if active).
@@ -210,14 +256,19 @@ function applyMuteStateWithFade(fadeDuration) {
 }
 
 async function playSelectedTrack(trackKey) {
-    const { sources, gains, duration, startTime, startOffset } = await loadTrackSources(trackKey);
+    const { sources, gains, duration, startTime, nativeBPM } = await loadTrackSources(trackKey, { sync: false });
 
     loadingIndicator.style.display = "none";
     sourceNodes = sources;
     gainNodes = gains;
     trackLength = duration;
-    loopAnchorTime = startTime - startOffset;
-    currentTrackBPM = getBPMFromTrackName(trackKey);
+
+    // The first track defines the mix tempo and resets the beat clock to its downbeat.
+    masterTempo = nativeBPM;
+    beatRefTime = startTime;
+    beatRefBeats = 0;
+    tempoGlideToken++;
+    currentTrackBPM = masterTempo;
     updateTrackSelectorColors();
 
     applyMuteStateWithFade(trackLength / 32);
@@ -248,22 +299,18 @@ async function transitionToTrack() {
     trackName = selectedTrack.trim();
     trackNameClean = trackName.split('.').pop();
 
-    // Beat-sync the transition only when the target is BPM-compatible (green = exact,
-    // yellow = half/double); incompatible (red) targets just start from the top.
-    const targetBPM = getBPMFromTrackName(selectedTrack);
-    let syncReference = null;
-    if (currentTrackBPM && targetBPM && trackLength > 0) {
-        const isExactMatch = Math.abs(targetBPM - currentTrackBPM) < 0.01;
-        const isHalfOrDouble = Math.abs(targetBPM - currentTrackBPM / 2) < 0.01 || Math.abs(targetBPM - currentTrackBPM * 2) < 0.01;
-        if (isExactMatch || isHalfOrDouble) {
-            syncReference = { anchorTime: loopAnchorTime, length: trackLength };
-        }
-    }
+    const maintainBPM = document.getElementById("starter-layer-checkbox6").checked;
 
     const oldSources = sourceNodes;
     const oldGainNodes = gainNodes;
 
-    const { sources, gains, duration, startTime, startOffset } = await loadTrackSources(selectedTrack, syncReference);
+    // Play the incoming track at the current mix tempo (when we have one) so it beat-locks;
+    // its native BPM is resolved from the first layer inside loadTrackSources.
+    const { sources, gains, duration, startTime, startOffset, rate, nativeBPM, groupBPMs, groupRates } =
+        await loadTrackSources(selectedTrack, { targetTempo: masterTempo, sync: !!masterTempo });
+
+    const incomingBPM = nativeBPM;
+    const canTempoMatch = !!(masterTempo && incomingBPM);
 
     loadingIndicator.style.display = "none";
 
@@ -273,9 +320,6 @@ async function transitionToTrack() {
     sourceNodes = sources;
     gainNodes = gains;
     trackLength = duration;
-    loopAnchorTime = startTime - startOffset;
-    currentTrackBPM = targetBPM;
-    updateTrackSelectorColors();
 
     applyMuteStateWithFade(fadeDuration);
     oldGainNodes.forEach(gainNode => rampGain(gainNode, 0, fadeDuration));
@@ -288,6 +332,48 @@ async function transitionToTrack() {
         });
         oldGainNodes.forEach(gainNode => gainNode.disconnect());
     }, (fadeDuration * 1000) + 100);
+
+    const token = ++tempoGlideToken; // invalidates any pending glide; identifies this transition
+
+    if (maintainBPM || !canTempoMatch || rate === 1) {
+        // Maintain BPM: keep the mix tempo; the incoming track is already beat-locked to it,
+        // so the beat clock continues uninterrupted. Bootstrap it if we had no tempo yet.
+        if (!masterTempo && incomingBPM) {
+            masterTempo = incomingBPM;
+            beatRefTime = startTime;
+            beatRefBeats = 0;
+            currentTrackBPM = masterTempo;
+        }
+    } else {
+        // Adapt: after the crossfade, glide the mix from the current tempo to the incoming
+        // track's native tempo (playbackRate rate -> 1.0), then re-anchor the beat clock.
+        const now = audioContext.currentTime;
+        const startGlide = now + fadeDuration;
+        const endGlide = startGlide + tempoGlideDuration;
+
+        sources.forEach((source, i) => {
+            const group = Math.floor(i / 2);
+            const startRate = groupRates[group];
+            // Glide each group to the rate that keeps it at the new master tempo (group 0's native),
+            // snapped to its nearest octave so fast layers stay near their own speed.
+            const endRate = groupBPMs[group] ? (nearestOctaveTempo(nativeBPM, groupBPMs[group]) / groupBPMs[group]) : 1;
+            source.playbackRate.setValueAtTime(startRate, startGlide);
+            source.playbackRate.linearRampToValueAtTime(endRate, endGlide);
+        });
+
+        // Buffer position the loop reaches when the glide ends (integral of the rate ramp).
+        const posAtEnd = (startOffset + rate * (startGlide - startTime) + ((rate + 1) / 2) * tempoGlideDuration) % duration;
+        setTimeout(() => {
+            if (token !== tempoGlideToken) return; // superseded by a newer transition
+            masterTempo = incomingBPM;
+            beatRefTime = audioContext.currentTime;
+            beatRefBeats = posAtEnd * incomingBPM / 60;
+            currentTrackBPM = masterTempo;
+            updateTrackSelectorColors();
+        }, (endGlide - now) * 1000 + 50);
+    }
+
+    updateTrackSelectorColors();
 
     // Restart dynamic handling so its interval matches the new track length.
     if (document.getElementById("starter-layer-checkbox5").checked == true) {
@@ -551,6 +637,8 @@ musicReset.addEventListener("click", function () {
     updateVolumeBars();
     resetVariables();
 
+    masterTempo = null;
+    tempoGlideToken++;
     currentTrackBPM = null;
     updateTrackSelectorColors();
 
