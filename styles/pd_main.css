@@ -1117,7 +1117,7 @@ li > a {
 
 .dropdown-menu, .dropdown-option, #music-start,
 #music-reset, .music-label, #music-download,
-#music-transition {
+#music-transition, #current-bpm {
   background-color: rgb(16, 16, 16);
   color: var(--white);
   font-family: "Lato";
@@ -1232,6 +1232,11 @@ li > a {
   text-align: center;
   padding: 4px 0px;
   display: block;
+}
+
+.spaced-out {
+  display: flex;
+  justify-content: space-between;
 }
 
 /* Customization */

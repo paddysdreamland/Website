@@ -10,6 +10,7 @@ var trackNameClean;
 
 const trackSelector = document.getElementById("track-selector");
 const loadingIndicator = document.getElementById("volume-loading");
+const currentBPMDisplay = document.getElementById("current-bpm");
 
 const volumeBars = [
     document.getElementById("volume-bar1"),
@@ -92,6 +93,12 @@ function getBPMFromTrackName(trackName) {
     return bpmMatch ? parseFloat(bpmMatch[1].replace("_", ".")) : null;
 }
 
+// Shows the BPM the main-selected track starts at, regardless of playback state.
+function updateCurrentBPMDisplay() {
+    const bpm = getBPMFromTrackName(trackSelector.value);
+    currentBPMDisplay.innerHTML = bpm ? `${bpm} BPM` : "N/A BPM";
+}
+
 // Colors a select's track options by how their BPM relates to a reference BPM:
 // green = exact match, yellow = half/double, red = anything else. Options without a
 // BPM (district/mission headers) are left untouched; a null reference clears coloring.
@@ -146,6 +153,7 @@ trackSelector.addEventListener("change", () => {
         document.getElementById("layers-selector4").value = selectedTrackValue;
     }
     updateLayerSelectorColors(); // Update colors based on the selected track BPM
+    updateCurrentBPMDisplay();
 });
 
 // Total beats elapsed on the running mix clock (the mix runs at constant masterTempo since beatRefTime).
@@ -256,15 +264,17 @@ function applyMuteStateWithFade(fadeDuration) {
 }
 
 async function playSelectedTrack(trackKey) {
-    const { sources, gains, duration, startTime, nativeBPM } = await loadTrackSources(trackKey, { sync: false });
+    const mainBPM = getBPMFromTrackName(trackKey);
+    const { sources, gains, duration, startTime, nativeBPM } = await loadTrackSources(trackKey, { targetTempo: mainBPM, sync: false });
 
     loadingIndicator.style.display = "none";
     sourceNodes = sources;
     gainNodes = gains;
     trackLength = duration;
 
-    // The first track defines the mix tempo and resets the beat clock to its downbeat.
-    masterTempo = nativeBPM;
+    // The main selector defines the mix tempo (not the first layer, which may be overridden);
+    // reset the beat clock to the downbeat every group starts on.
+    masterTempo = mainBPM || nativeBPM;
     beatRefTime = startTime;
     beatRefBeats = 0;
     tempoGlideToken++;
@@ -306,10 +316,11 @@ async function transitionToTrack() {
 
     // Play the incoming track at the current mix tempo (when we have one) so it beat-locks;
     // its native BPM is resolved from the first layer inside loadTrackSources.
-    const { sources, gains, duration, startTime, startOffset, rate, nativeBPM, groupBPMs, groupRates } =
+    const { sources, gains, duration, startTime, startOffset, nativeBPM, groupBPMs, groupRates } =
         await loadTrackSources(selectedTrack, { targetTempo: masterTempo, sync: !!masterTempo });
 
-    const incomingBPM = nativeBPM;
+    // The mix tempo follows the main track selector, not the (possibly overridden) first layer.
+    const incomingBPM = getBPMFromTrackName(selectedTrack) || nativeBPM;
     const canTempoMatch = !!(masterTempo && incomingBPM);
 
     loadingIndicator.style.display = "none";
@@ -335,8 +346,8 @@ async function transitionToTrack() {
 
     const token = ++tempoGlideToken; // invalidates any pending glide; identifies this transition
 
-    if (maintainBPM || !canTempoMatch || rate === 1) {
-        // Maintain BPM: keep the mix tempo; the incoming track is already beat-locked to it,
+    if (maintainBPM || !canTempoMatch || Math.abs(incomingBPM - masterTempo) < 0.01) {
+        // Maintain BPM (or the incoming tempo already equals the mix tempo): keep the mix tempo,
         // so the beat clock continues uninterrupted. Bootstrap it if we had no tempo yet.
         if (!masterTempo && incomingBPM) {
             masterTempo = incomingBPM;
@@ -345,29 +356,30 @@ async function transitionToTrack() {
             currentTrackBPM = masterTempo;
         }
     } else {
-        // Adapt: after the crossfade, glide the mix from the current tempo to the incoming
-        // track's native tempo (playbackRate rate -> 1.0), then re-anchor the beat clock.
+        // Adapt: after the crossfade, glide the mix from the current tempo to the incoming track's
+        // tempo (each group to its nearest-octave rate for the new tempo), then re-anchor the clock.
         const now = audioContext.currentTime;
         const startGlide = now + fadeDuration;
         const endGlide = startGlide + tempoGlideDuration;
 
+        const endRates = groupBPMs.map(bpm => bpm ? nearestOctaveTempo(incomingBPM, bpm) / bpm : 1);
+
         sources.forEach((source, i) => {
             const group = Math.floor(i / 2);
-            const startRate = groupRates[group];
-            // Glide each group to the rate that keeps it at the new master tempo (group 0's native),
-            // snapped to its nearest octave so fast layers stay near their own speed.
-            const endRate = groupBPMs[group] ? (nearestOctaveTempo(nativeBPM, groupBPMs[group]) / groupBPMs[group]) : 1;
-            source.playbackRate.setValueAtTime(startRate, startGlide);
-            source.playbackRate.linearRampToValueAtTime(endRate, endGlide);
+            source.playbackRate.setValueAtTime(groupRates[group], startGlide);
+            source.playbackRate.linearRampToValueAtTime(endRates[group], endGlide);
         });
 
-        // Buffer position the loop reaches when the glide ends (integral of the rate ramp).
-        const posAtEnd = (startOffset + rate * (startGlide - startTime) + ((rate + 1) / 2) * tempoGlideDuration) % duration;
+        // Group 0's buffer position when the glide ends (integral of its rate ramp), converted to
+        // master beats — group 0 ends running at endRate0 = octave x the new grid beat rate.
+        const startRate0 = groupRates[0];
+        const endRate0 = endRates[0];
+        const posAtEnd = (startOffset + startRate0 * (startGlide - startTime) + ((startRate0 + endRate0) / 2) * tempoGlideDuration) % duration;
         setTimeout(() => {
             if (token !== tempoGlideToken) return; // superseded by a newer transition
             masterTempo = incomingBPM;
             beatRefTime = audioContext.currentTime;
-            beatRefBeats = posAtEnd * incomingBPM / 60;
+            beatRefBeats = posAtEnd * incomingBPM / (60 * endRate0);
             currentTrackBPM = masterTempo;
             updateTrackSelectorColors();
         }, (endGlide - now) * 1000 + 50);
@@ -532,7 +544,10 @@ function startDynamicHandling() {
     }, (trackLength * 1000));
 }
 
-document.addEventListener("DOMContentLoaded", populateTrackSelector);
+document.addEventListener("DOMContentLoaded", () => {
+    populateTrackSelector();
+    updateCurrentBPMDisplay();
+});
 
 function resetVariables() {
     if (document.getElementById("starter-layer-checkbox1").checked == false) {
