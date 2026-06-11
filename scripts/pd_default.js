@@ -94,8 +94,8 @@ document.querySelectorAll('[id$="-button"]').forEach(function (button) {
 var socialLinks = {
     "discord-button": "https://discord.gg/paddysdreamland",
     "twitch-button": "https://www.twitch.tv/paddysdreamland/about",
-    "steam-button": "https://steamcommunity.com/groups/paddysdreamland",
-    "youtube-button": "https://www.youtube.com/@paddysdreamland"
+    "youtube-button": "https://www.youtube.com/@paddysdreamland",
+    "github-button": "https://github.com/paddysdreamland/Website"
 };
 
 Object.keys(socialLinks).forEach(function (id) {
