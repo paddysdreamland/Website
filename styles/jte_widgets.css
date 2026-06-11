@@ -24,8 +24,8 @@
 .msg-wrapper {
     background: linear-gradient(
         to right,
-        rgba(0, 0, 0, 0.5) 0%,
-        rgba(0, 0, 0, 0) 100%
+        rgba(0, 0, 0, 0.75) 0%,
+        rgba(0, 0, 0, 0.25) 100%
     ), var(--holder-background-image);
 
     border-radius: 4px;
@@ -86,8 +86,8 @@
 .msg-highlight {
     background: linear-gradient(
         to right,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 50%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
     ), var(--holder-background-mask);
 }
 
@@ -96,8 +96,8 @@
 
     background: linear-gradient(
         90deg,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 100%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
     ); filter: blur(8px); z-index: -1;
 }
 
@@ -105,8 +105,8 @@
 .msg-firstmsg {
     background: linear-gradient(
         to right,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 50%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
     ), var(--holder-background-mask);
 }
 
@@ -115,8 +115,8 @@
 
     background: linear-gradient(
         90deg,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 100%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
     ); filter: blur(4px); z-index: -1;
 }
 
@@ -129,8 +129,8 @@
 .msg-bits {
     background: linear-gradient(
         to right,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 50%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
     ), var(--holder-background-mask);
 }
 
@@ -139,8 +139,8 @@
 
     background: linear-gradient(
         90deg,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 100%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
     ); filter: blur(4px); z-index: -1;
 }
 
@@ -205,24 +205,24 @@
 .msg-wrapper.log-hint {
     background: linear-gradient(
         to right,
-        rgba(var(--log-hint-color), 0.5) 0%,
-        rgba(var(--log-hint-color), 0) 100%
+        rgba(var(--log-hint-color), 0.75) 0%,
+        rgba(var(--log-hint-color), 0.25) 100%
     ), var(--holder-background-mask);
 }
 
 .msg-wrapper.log-warn {
     background: linear-gradient(
         to right,
-        rgba(var(--log-warn-color), 0.5) 0%,
-        rgba(var(--log-warn-color), 0) 100%
+        rgba(var(--log-warn-color), 0.75) 0%,
+        rgba(var(--log-warn-color), 0.25) 100%
     ), var(--holder-background-mask);
 }
 
 .msg-wrapper.log-error {
     background: linear-gradient(
         to right,
-        rgba(var(--log-error-color), 0.5) 0%,
-        rgba(var(--log-error-color), 0) 100%
+        rgba(var(--log-error-color), 0.75) 0%,
+        rgba(var(--log-error-color), 0.25) 100%
     ), var(--holder-background-mask);
 }
 

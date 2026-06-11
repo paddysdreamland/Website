@@ -27,6 +27,16 @@ var alreadyPlaying = false;
 var trackLength;
 let gainNodes = [];
 let sourceNodes = [];
+let retiredNodeSets = []; // outgoing node sets still fading out from transitions, pending cleanup
+
+// Stops and disconnects a set of sources and gains (safe to call more than once).
+function disposeNodeSet(sources, gains) {
+    sources.forEach(source => {
+        try { source.stop(); } catch (e) { /* already stopped */ }
+        source.disconnect();
+    });
+    gains.forEach(gainNode => gainNode.disconnect());
+}
 var currentTrackBPM = null;    // effective (sounding) tempo of the mix, used for selector coloring
 
 // Tempo-mixing state. The mix runs at masterTempo (BPM); every track is played at
@@ -93,9 +103,10 @@ function getBPMFromTrackName(trackName) {
     return bpmMatch ? parseFloat(bpmMatch[1].replace("_", ".")) : null;
 }
 
-// Shows the BPM the main-selected track starts at, regardless of playback state.
+// While playing, shows the mix's current (maintained/adapted) tempo; when stopped, shows the BPM
+// the main-selected track would start at.
 function updateCurrentBPMDisplay() {
-    const bpm = getBPMFromTrackName(trackSelector.value);
+    const bpm = (alreadyPlaying && currentTrackBPM) ? currentTrackBPM : getBPMFromTrackName(trackSelector.value);
     currentBPMDisplay.innerHTML = bpm ? `${bpm} BPM` : "N/A BPM";
 }
 
@@ -280,6 +291,7 @@ async function playSelectedTrack(trackKey) {
     tempoGlideToken++;
     currentTrackBPM = masterTempo;
     updateTrackSelectorColors();
+    updateCurrentBPMDisplay();
 
     applyMuteStateWithFade(trackLength / 32);
 
@@ -335,13 +347,12 @@ async function transitionToTrack() {
     applyMuteStateWithFade(fadeDuration);
     oldGainNodes.forEach(gainNode => rampGain(gainNode, 0, fadeDuration));
 
-    // Once the old track has faded out, stop and release its nodes.
+    // Track the outgoing set so Stop can kill it immediately; otherwise let it finish fading out.
+    const retiredSet = { sources: oldSources, gains: oldGainNodes };
+    retiredNodeSets.push(retiredSet);
     setTimeout(() => {
-        oldSources.forEach(source => {
-            try { source.stop(); } catch (e) { /* already stopped */ }
-            source.disconnect();
-        });
-        oldGainNodes.forEach(gainNode => gainNode.disconnect());
+        disposeNodeSet(oldSources, oldGainNodes);
+        retiredNodeSets = retiredNodeSets.filter(set => set !== retiredSet);
     }, (fadeDuration * 1000) + 100);
 
     const token = ++tempoGlideToken; // invalidates any pending glide; identifies this transition
@@ -382,10 +393,12 @@ async function transitionToTrack() {
             beatRefBeats = posAtEnd * incomingBPM / (60 * endRate0);
             currentTrackBPM = masterTempo;
             updateTrackSelectorColors();
+            updateCurrentBPMDisplay();
         }, (endGlide - now) * 1000 + 50);
     }
 
     updateTrackSelectorColors();
+    updateCurrentBPMDisplay();
 
     // Restart dynamic handling so its interval matches the new track length.
     if (document.getElementById("starter-layer-checkbox5").checked == true) {
@@ -640,13 +653,12 @@ musicReset.addEventListener("click", function () {
     volumeLoadingBar.style.width = parseInt(0) + "%";
     volumeLoadingPercentage.innerHTML = parseInt(0) + "%";
 
-    sourceNodes.forEach(source => {
-        try { source.stop(); } catch (e) { /* already stopped */ }
-        source.disconnect();
-    });
+    disposeNodeSet(sourceNodes, gainNodes);
     sourceNodes = [];
-    gainNodes.forEach(gainNode => gainNode.disconnect());
     gainNodes = [];
+    // Also kill any tracks still mid-crossfade from a transition.
+    retiredNodeSets.forEach(set => disposeNodeSet(set.sources, set.gains));
+    retiredNodeSets = [];
     alreadyPlaying = false;
     clearInterval(dynamicHandlingInterval);
     updateVolumeBars();
@@ -656,6 +668,7 @@ musicReset.addEventListener("click", function () {
     tempoGlideToken++;
     currentTrackBPM = null;
     updateTrackSelectorColors();
+    updateCurrentBPMDisplay();
 
     musicButton.style.display = "";
     musicTransition.style.display = "none";
@@ -670,12 +683,7 @@ async function renderAndDownloadMultiChannelMix() {
         alert("Please select a track to download.");
         return;
     }
-
-    const sampleRate = audioContext.sampleRate;
-    const offlineContext = new OfflineAudioContext(8, sampleRate * trackLength, sampleRate); // 8 channels
-
-    // Create a ChannelMergerNode to handle the 8 channels
-    const merger = offlineContext.createChannelMerger(8);
+    trackNameClean = selectedTrack.split('.').pop();
 
     const layerSelectors = [
         document.getElementById("layers-selector1"),
@@ -684,36 +692,78 @@ async function renderAndDownloadMultiChannelMix() {
         document.getElementById("layers-selector4")
     ];
 
-    await Promise.all(layerSelectors.map(async (selector, index) => {
-        const selectedLayerTrackKey = selector.value || selectedTrack;
-        const selectedLayerKeys = selectedLayerTrackKey.split('.');
-        const track = music[selectedLayerKeys[0]][selectedLayerKeys[1]][selectedLayerKeys[2]];
+    // Bake at the maintained mix tempo (the live tempo when playing, else the main selection's BPM).
+    const mixTempo = (alreadyPlaying && masterTempo) ? masterTempo : getBPMFromTrackName(selectedTrack);
 
-        const buffer1 = await loadAudio(track[`layer${(index * 2) + 1}`]);
-        const buffer2 = await loadAudio(track[`layer${(index * 2) + 2}`]);
+    const groupKeys = layerSelectors.map(selector => selector.value || selectedTrack);
+    const groupBPMs = groupKeys.map(getBPMFromTrackName);
+    const groupRates = groupBPMs.map(bpm => (bpm && mixTempo) ? nearestOctaveTempo(mixTempo, bpm) / bpm : 1);
 
-        // Create buffer sources for each layer
-        const source1 = offlineContext.createBufferSource();
-        const source2 = offlineContext.createBufferSource();
-
-        source1.buffer = buffer1;
-        source2.buffer = buffer2;
-
-        // Connect each source to its respective channel in the merger
-        source1.connect(merger, 0, index * 2); // Connect to channel (index*2)
-        source2.connect(merger, 0, (index * 2) + 1); // Connect to channel (index*2 + 1)
-
-        source1.start(0);
-        source2.start(0);
+    // Load every layer up front (we need durations to size the render).
+    const groupBuffers = await Promise.all(groupKeys.map(async (groupKey, index) => {
+        const keys = groupKey.split('.');
+        const track = music[keys[0]][keys[1]][keys[2]];
+        return [
+            await loadAudio(track[`layer${(index * 2) + 1}`]),
+            await loadAudio(track[`layer${(index * 2) + 2}`])
+        ];
     }));
 
-    // Connect the merger to the offlineContext destination
+    // Stack each active layer's loop to a shared length so none cut off mid-loop. Each layer is
+    // tempo-matched to the grid, so its loop is a whole number of beats; the LCM of those beat
+    // counts is the shortest length where every active layer ends on a clean loop boundary.
+    const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+    const lcm = (a, b) => a / gcd(a, b) * b;
+
+    const activeLoops = [];
+    groupBuffers.forEach((bufferPair, index) => {
+        if (!document.getElementById(`starter-layer-checkbox${index + 1}`).checked) return;
+        const bufferDuration = bufferPair[0]?.duration || 0;
+        if (bufferDuration <= 0) return;
+        const loopSeconds = bufferDuration / (groupRates[index] || 1); // audible loop length at its play rate
+        const beats = mixTempo ? Math.max(1, Math.round(loopSeconds * mixTempo / 60)) : null;
+        activeLoops.push({ loopSeconds, beats });
+    });
+
+    let renderDuration;
+    if (mixTempo && activeLoops.length && activeLoops.every(loop => loop.beats)) {
+        let totalBeats = activeLoops.reduce((acc, loop) => lcm(acc, loop.beats), 1);
+        // Safety cap so near-coprime loop lengths can't produce an enormous file (~10 min max).
+        const maxBeats = Math.ceil(600 * mixTempo / 60);
+        if (totalBeats > maxBeats) totalBeats = activeLoops[0].beats;
+        renderDuration = totalBeats * 60 / mixTempo;
+    } else {
+        // No tempo reference: fall back to the longest active loop (or the master group's loop).
+        const longestActive = activeLoops.reduce((max, loop) => Math.max(max, loop.loopSeconds), 0);
+        renderDuration = longestActive || (groupBuffers[0][0]?.duration || 0) / (groupRates[0] || 1);
+    }
+
+    if (renderDuration <= 0) {
+        alert("Could not determine track length to download.");
+        return;
+    }
+
+    const sampleRate = audioContext.sampleRate;
+    const offlineContext = new OfflineAudioContext(8, Math.ceil(sampleRate * renderDuration), sampleRate);
+    const merger = offlineContext.createChannelMerger(8);
+
+    groupBuffers.forEach((bufferPair, index) => {
+        // Only bake the layers whose Active Layers checkbox is ticked; the rest stay silent.
+        if (!document.getElementById(`starter-layer-checkbox${index + 1}`).checked) return;
+
+        bufferPair.forEach((buffer, sub) => {
+            const source = offlineContext.createBufferSource();
+            source.buffer = buffer;
+            source.playbackRate.value = groupRates[index]; // tempo-match, preserving the maintained BPM
+            source.loop = true;                            // fill the whole render window
+            source.connect(merger, 0, (index * 2) + sub);
+            source.start(0);
+        });
+    });
+
     merger.connect(offlineContext.destination);
 
-    // Render the multi-channel mix
     const renderedBuffer = await offlineContext.startRendering();
-
-    // Convert to multi-channel WAV and download
     downloadMultiChannelWAV(renderedBuffer);
 }
 

@@ -286,7 +286,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Content with emotes interleaved
         const content = document.createElement("div");
         content.classList.add("msg-content", "text");
-        if (data.isAction) content.style.color = data.color;
+        //if (data.isAction) content.style.color = data.color;
 
         const parts = renderMessageWithEmotes(data.message, data.emotes);
         parts.forEach(part => {
