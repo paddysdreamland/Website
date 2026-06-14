@@ -30,6 +30,21 @@ async function initDiscordHeader() {
       await fetch('/auth/logout.php', { headers: { 'Accept': 'application/json' } });
       window.location.reload();
     });
+
+    document.getElementById('discord-unlink').addEventListener('click', async () => {
+        if (!confirm('This permanently deletes your account and all your reactions. This cannot be undone. Continue?')) {
+            return;
+        }
+        const res = await fetch('/auth/unlink.php', {
+            method: 'POST',
+            headers: { 'Accept': 'application/json' }
+        });
+        if (res.ok) {
+            window.location.href = '/';   // they're gone now — send them home
+        } else {
+            alert('Something went wrong. Please try again or contact me directly.');
+        }
+    });
 }
 
 document.addEventListener('DOMContentLoaded', initDiscordHeader);
