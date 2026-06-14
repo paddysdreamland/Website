@@ -24,6 +24,7 @@
         <script src="scripts/pd_post_manager.js"></script>
 
         <script src="scripts/pd_customization.js" defer></script>
+        <script src="scripts/pd_discordauth.js"></script>
 
         <script src="scripts/moduleloader.js"></script>
 
@@ -87,6 +88,27 @@
                 <div class="nav-misc-holder">
                     <button id="ost-button" class="nav-misc-button" style="background-image: url(images/silk/music.png);"></button>
                     <button id="settings-button" class="nav-misc-button" style="background-image: url(images/silk/cog.png);"></button>
+                </div>
+
+                <div class="nav-acc-holder row-5">
+                    <div id="logged-out-wrapper" style="display: none;">
+                        <div class="nav-acc-holder2">
+                            <button id="discord-login" class="nav-acc-button">Connect Discord</button>
+                        </div>
+                    </div>
+
+                    <div id="logged-in-wrapper" style="display: none;">
+                        <div class="row-5">
+                            <div class="nav-acc-holder2 row-5">
+                                <div id="discord-display-name">Paddy-V</div>
+                                <div id="discord-profile-image"></div>
+                            </div>
+
+                            <div class="nav-acc-holder2">
+                                <button id="discord-logout" class="nav-acc-button">Logout</button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="brand-holder">
