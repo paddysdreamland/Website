@@ -30,6 +30,15 @@ RewriteRule ^ - [F]
 RewriteCond %{QUERY_STRING} (\.\./|%2e%2e/|/etc/passwd|union(\s|%20)+select|select(\s|%20)+.*from|%00|\x00) [NC]
 RewriteRule ^ - [F]
 
+# Block requests with no User-Agent
+RewriteEngine On
+RewriteCond %{HTTP_USER_AGENT} ^$
+RewriteRule .* - [F,L]
+
+# Block WordPress probe paths (you have no WP)
+RewriteRule ^wp-.*\.php$ - [F,L]
+RewriteRule ^wp-(admin|content|includes)/ - [F,L]
+
 ErrorDocument 403 /pd_error.html?code=403
 ErrorDocument 404 /pd_error.html?code=404
 ErrorDocument 410 /pd_error.html?code=410
