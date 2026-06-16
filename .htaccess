@@ -4,6 +4,10 @@ ErrorDocument 404 /notfound.php
 Options -Indexes
 RewriteEngine On
 
+<Files "pd_main.html">
+    Require all denied
+</Files>
+
 <IfModule mod_headers.c>
     Header always set Cache-Control "no-cache, no-store, must-revalidate"
     Header always set Pragma "no-cache"
