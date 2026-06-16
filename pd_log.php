@@ -50,12 +50,12 @@ function pd_guard(): void {
         "SELECT COUNT(*) FROM pd_access_log
          WHERE ip = ? AND created_at > (NOW() - INTERVAL 20 SECOND)");
     $burst->execute([$ip]);
-    if ((int)$burst->fetchColumn() > 4) {
+    if ((int)$burst->fetchColumn() > 8) {
         $pdo->prepare(
             "INSERT IGNORE INTO pd_blocklist (ip, reason, expires_at)
              VALUES (?, 'burst', NOW() + INTERVAL 24 HOUR)")
             ->execute([$ip]);
-        pd_notify("🚨 banned `$ip` — burst");
+        pd_notify("\🚨 Banned `$ip` — Too Many Requests");
         http_response_code(403); exit;
     }
 
@@ -68,12 +68,12 @@ function pd_guard(): void {
          WHERE ip = ? AND status = 404
            AND created_at > (NOW() - INTERVAL 10 MINUTE)");
     $miss->execute([$ip]);
-    if ((int)$miss->fetchColumn() >= 5) {
+    if ((int)$miss->fetchColumn() >= 4) {
         $pdo->prepare(
             "INSERT IGNORE INTO pd_blocklist (ip, reason, expires_at)
              VALUES (?, 'scan', NOW() + INTERVAL 7 DAY)")
             ->execute([$ip]);
-        pd_notify("🚨 banned `$ip` — scanning (404s)");
+        pd_notify("\🚨 Banned `$ip` — Scraping");
         http_response_code(403); exit;
     }
 }
