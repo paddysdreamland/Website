@@ -67,14 +67,14 @@
 
         <meta name="twitter:title" content="Paddy's Dreamland™ — Chat, is this real?">
         <meta name="twitter:description" content="Project showcases, news, information, and most importantly, Paddy's Dreamland and home.">
-        <meta name="twitter:image" content="https://www.paddysdreamland.com/images/embeds/banner6.png">
+        <meta name="twitter:image" content="https://www.paddysdreamland.com/images/embeds/banner7.png">
         <meta name="twitter:card" content="summary_large_image">
 
         <meta name="description" content="A digital sanctuary where you're allowed to exist without being judged, fixed, or misunderstood. Game development, music, streams, and a small creative community by Paddy.">
 
         <meta property="og:title" content="Paddy's Dreamland™ — Chat, is this real?">
         <meta property="og:description" content="Project showcases, news, information, and most importantly, Paddy's Dreamland and home.">
-        <meta property="og:image" content="https://www.paddysdreamland.com/images/embeds/banner6.png">
+        <meta property="og:image" content="https://www.paddysdreamland.com/images/embeds/banner7.png">
         <meta property="og:site_name" content="Paddy's Dreamland™">
         <meta property="og:url" content="https://www.paddysdreamland.com">
         <meta property="og:type" content="website">
@@ -85,9 +85,21 @@
 
         <div id="website-holder">
             <header id="header-holder">
-                <div class="nav-misc-holder">
-                    <button id="ost-button" class="nav-misc-button" style="background-image: url(images/silk/music.png);"></button>
-                    <button id="settings-button" class="nav-misc-button" style="background-image: url(images/silk/cog.png);"></button>
+                <div class="nav-misc-anchor row-5">
+                    <div class="nav-misc-holder">
+                        <div class="nav-acc-button"><span id="visits">N/A</span></div>
+
+                        <script>
+                            fetch('/pd_count.php').then(r => r.json()).then(data => {
+                                document.getElementById('visits').textContent = data.visits;
+                            });
+                        </script>
+                    </div>
+
+                    <div class="nav-misc-holder">
+                        <button id="ost-button" class="nav-misc-button" style="background-image: url(images/silk/music.png);"></button>
+                        <button id="settings-button" class="nav-misc-button" style="background-image: url(images/silk/cog.png);"></button>
+                    </div>
                 </div>
 
                 <div class="nav-acc-holder row-5">
@@ -99,7 +111,7 @@
 
                     <div id="logged-in-wrapper" style="display: none;">
                         <div class="row-5">
-                            <div class="nav-acc-holder2 row-5">
+                            <div class="nav-acc-holder2 row-0">
                                 <div id="discord-display-name">Paddy-V</div>
                                 <div id="discord-profile-image"></div>
                             </div>
@@ -613,8 +625,6 @@
                                         </div>
                                     </div>                            
                                 </div>
-        
-                                
                             </div>
                         </div>
                     </section>

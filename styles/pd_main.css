@@ -536,12 +536,15 @@ a {
 }
 
 /* Navigation - Misc */
-.nav-misc-holder {
-  background-image: var(--holder-background-image);
-  background-color: var(--holder-background-color);
+.nav-misc-anchor {
   position: absolute;
   right: 5px;
   top: 5px;
+}
+
+.nav-misc-holder {
+  background-image: var(--holder-background-image);
+  background-color: var(--holder-background-color);
   border-radius: var(--custom-border-radius);
   overflow: hidden;
   display: flex;
@@ -650,6 +653,8 @@ a {
 .nav-acc-button {
   background-color: transparent;
   height: 32px;
+  font-family: "Tahoma";
+  font-size: 13px;
   font-weight: 600;
   padding: 0px 10px;
   align-content: center;
@@ -1329,6 +1334,18 @@ li > a {
   display: flex;
   flex-direction: row;
   gap: 5px;
+}
+
+.column-0 {
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+}
+
+.row-0 {
+  display: flex;
+  flex-direction: row;
+  gap: 0px;
 }
 
 /* Customization */

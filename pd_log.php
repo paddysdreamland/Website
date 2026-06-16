@@ -48,8 +48,19 @@ function pd_guard(): void {
     //     Paths no human or benign crawler ever requests. ONE hit is
     //     unambiguously hostile, so no count needed. Never false-positives
     //     because real visitors never ask for these files.
-    $traps = ['/.env', '/.aws/', '/.git/', '/wp-login.php',
-              '/wp-admin', '/config.json', '/.ssh/', '/vendor/', '/wp-content/'];
+    $traps = [
+        '/.env',
+        '/.aws/',
+        '/.git/',
+        '/wp-login.php',
+        '/wp-content',
+        '/wp-admin',
+        '/config.json',
+        '/.ssh/',
+        '/vendor/',
+        '/admin'
+    ];
+
     foreach ($traps as $t) {
         if (stripos($uri, $t) !== false) {
             $pdo->prepare(
@@ -68,7 +79,7 @@ function pd_guard(): void {
         "SELECT COUNT(*) FROM pd_access_log
          WHERE ip = ? AND created_at > (NOW() - INTERVAL 20 SECOND)");
     $burst->execute([$ip]);
-    if ((int)$burst->fetchColumn() > 4) {
+    if ((int)$burst->fetchColumn() > 8) {
         $pdo->prepare(
             "INSERT IGNORE INTO pd_blocklist (ip, reason, expires_at)
              VALUES (?, 'burst', NOW() + INTERVAL 24 HOUR)")
@@ -86,7 +97,7 @@ function pd_guard(): void {
          WHERE ip = ? AND status = 404
            AND created_at > (NOW() - INTERVAL 10 MINUTE)");
     $miss->execute([$ip]);
-    if ((int)$miss->fetchColumn() >= 5) {
+    if ((int)$miss->fetchColumn() >= 4) {
         $pdo->prepare(
             "INSERT IGNORE INTO pd_blocklist (ip, reason, expires_at)
              VALUES (?, 'scan', NOW() + INTERVAL 7 DAY)")
