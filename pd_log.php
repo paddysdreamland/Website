@@ -3,7 +3,13 @@
  * pd_log.php
  * UPLOAD TO:  /home/paddnols/public_html/pd_log.php
  *
- * The logger. Called once per request by your index.php glue.
+ * Defines two functions:
+ *   pd_log_hit()  — records one request to pd_access_log
+ *   pd_guard()    — ban check + log + TWO defence rules:
+ *                     1) burst   (volume / overload protection)
+ *                     2) scan    (repeated 404 probing / scrapers)
+ *
+ * Called by index.php (page loads) and notfound.php (404s).
  * Upload as-is — no editing needed.
  * ===================================================================== */
 
@@ -26,27 +32,48 @@ function pd_guard(): void {
     $pdo = pd_pdo();
     $ip  = $_SERVER['REMOTE_ADDR'] ?? '';
 
-    // banned? cheapest path, runs first
+    // --- already banned? cheapest path, runs first -------------------
     $ban = $pdo->prepare(
         "SELECT 1 FROM pd_blocklist
          WHERE ip = ? AND (expires_at IS NULL OR expires_at > NOW())");
     $ban->execute([$ip]);
     if ($ban->fetchColumn()) { http_response_code(403); exit; }
 
+    // --- log this request (must happen before the checks below, so
+    //     the current request counts toward the totals) --------------
     pd_log_hit();
 
-    // burst from this IP in the last 20s?
-    $c = $pdo->prepare(
+    // --- RULE 1: burst (volume) -> overload / DDOS protection --------
+    //     5+ requests from one IP within 20 seconds.
+    //     Short 24h ban — often just an impatient real person.
+    $burst = $pdo->prepare(
         "SELECT COUNT(*) FROM pd_access_log
          WHERE ip = ? AND created_at > (NOW() - INTERVAL 20 SECOND)");
-    $c->execute([$ip]);
-
-    if ((int)$c->fetchColumn() > 4) {
+    $burst->execute([$ip]);
+    if ((int)$burst->fetchColumn() > 4) {
         $pdo->prepare(
             "INSERT IGNORE INTO pd_blocklist (ip, reason, expires_at)
              VALUES (?, 'burst', NOW() + INTERVAL 24 HOUR)")
             ->execute([$ip]);
         pd_notify("🚨 banned `$ip` — burst");
+        http_response_code(403); exit;
+    }
+
+    // --- RULE 2: scan (intent) -> credential / vuln scrapers ---------
+    //     5+ "file not found" (404) hits from one IP within 10 minutes.
+    //     Patient window catches slow scanners that dodge the burst rule.
+    //     Longer 7-day ban — a real visitor never probes 5 missing files.
+    $miss = $pdo->prepare(
+        "SELECT COUNT(*) FROM pd_access_log
+         WHERE ip = ? AND status = 404
+           AND created_at > (NOW() - INTERVAL 10 MINUTE)");
+    $miss->execute([$ip]);
+    if ((int)$miss->fetchColumn() >= 5) {
+        $pdo->prepare(
+            "INSERT IGNORE INTO pd_blocklist (ip, reason, expires_at)
+             VALUES (?, 'scan', NOW() + INTERVAL 7 DAY)")
+            ->execute([$ip]);
+        pd_notify("🚨 banned `$ip` — scanning (404s)");
         http_response_code(403); exit;
     }
 }
