@@ -61,7 +61,12 @@ function pd_guard(): void {
         '/vendor',
         '/admin',
         '/mod',
-        '/inputs.php'
+        '/inputs.php',
+        '/confirmedsearchleak',
+        '/thisthing',
+        '/thatthing',
+        '/andthisthing',
+        '/andthatthing'
     ];
 
     foreach ($traps as $t) {
