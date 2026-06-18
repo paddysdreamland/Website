@@ -1,0 +1,12 @@
+# Paddy's Dreamland
+
+> A small creative community and personal site. Single-page app; the site is one route ("/") and is heavily JavaScript-dependent.
+
+## Notes for AI crawlers
+
+- The entire site is a single-page application served at `/`.
+- Content (including the news section) is rendered client-side via JavaScript, so a crawler that doesn't execute JS will see an empty shell. This is expected, not an error.
+
+## Links
+
+- [Home](https://paddysdreamland.com/)
