@@ -50,15 +50,18 @@ function pd_guard(): void {
     //     because real visitors never ask for these files.
     $traps = [
         '/.env',
-        '/.aws/',
-        '/.git/',
+        '/.aws',
+        '/.git',
         '/wp-login.php',
         '/wp-content',
         '/wp-admin',
+        '/wp-json',
         '/config.json',
-        '/.ssh/',
-        '/vendor/',
-        '/admin'
+        '/.ssh',
+        '/vendor',
+        '/admin',
+        '/mod',
+        '/inputs.php'
     ];
 
     foreach ($traps as $t) {
