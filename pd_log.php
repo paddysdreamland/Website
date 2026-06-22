@@ -4,26 +4,32 @@
  * UPLOAD TO:  /home/paddnols/public_html/pd_log.php
  *
  * Defines:
- *   pd_log_hit()    — records one request to pd_access_log
- *   pd_bomb_armed() — is the gzip bomb currently live?
- *   pd_send_bomb()  — streams the gzip bomb to the client, then exits
- *   pd_guard()      — ban check + log + THREE defence rules:
- *                       1) honeypot (instant ban on trap paths — intent)
- *                       2) burst    (volume / overload protection)
- *                       3) scan     (repeated 404 probing / scrapers)
+ *   pd_log_hit()        — records one request to pd_access_log
+ *   pd_bomb_armed()     — is the gzip bomb currently live?
+ *   pd_send_bomb()      — streams the gzip bomb to the client, then exits
+ *   pd_guard_degraded() — throttled "guard fell back" alert (best-effort)
+ *   pd_guard()          — ban check + log + THREE defence rules:
+ *                           1) honeypot (instant ban on trap paths)
+ *                           2) burst    (volume / overload protection)
+ *                           3) scan     (repeated 404 probing / scrapers)
+ *
+ * FAILS OPEN:
+ *   All DB work in pd_guard() is wrapped. If anything throws (missing
+ *   column, dropped connection, etc.) the request is served UNGUARDED
+ *   rather than 500ing the whole site, and Paddy is pinged (throttled).
+ *   A guard that takes the site down when it trips over its own schema
+ *   is worse than one that briefly lets a scraper through. The intentional
+ *   exit paths (403s, bomb) end the script before the catch sees them, so
+ *   real bans/bombs are unaffected.
  *
  * VICTIM PROTECTION (Sec-Fetch-Site):
  *   A real browser ALWAYS sends Sec-Fetch-Site; curl / python / scanner
  *   tooling does not. An attacker can't reflect the bomb at a stranger
  *   (TCP can't be source-spoofed), but they CAN embed a trap URL in an
  *   <img>/<iframe> or post the bare link, so a MEMBER's own browser fires
- *   the request and eats the ban/bomb. We defuse that everywhere:
+ *   the request. We defuse that everywhere:
  *     - honeypot: any browser request to a trap -> quiet 404, no punishment
  *     - scan/burst: cross-site / same-site requests don't count toward a ban
- *   so an embedded trap can't trip ANY of the three rules. Direct scanners
- *   (no Sec-Fetch header) are caught exactly as before; a headless-Chromium
- *   scanner dodges the instant honeypot ban but its 404s still accumulate
- *   into the scan rule.
  *
  * REQUIRES these columns on pd_access_log:
  *   ALTER TABLE pd_access_log
@@ -36,23 +42,16 @@
 
 /* ---- bomb config ---------------------------------------------------
  * PD_BOMB_ENABLED : master switch. false => honeypot reverts to clean 403.
- * PD_BOMB_FILE    : the pre-built gzip bomb. Kept OUTSIDE public_html so
- *                   nobody can fetch it directly — it only ever leaves the
- *                   server through pd_send_bomb(). Build it with:
+ * PD_BOMB_FILE    : pre-built gzip bomb, kept OUTSIDE public_html so nobody
+ *                   can fetch it directly. Build it with:
  *                     dd if=/dev/zero bs=1M count=10240 | gzip -9 > 10G.gz
  *                   then drop 10G.gz in /home/paddnols/ (one level up).
- *                   To toggle live without editing this file, swap the
- *                   PD_BOMB_ENABLED check in pd_bomb_armed() for a sentinel:
- *                     is_readable(__DIR__ . '/bomb.armed')
  * ------------------------------------------------------------------ */
 const PD_BOMB_ENABLED = true;
 define('PD_BOMB_FILE', dirname(__DIR__) . '/10G.gz');   // /home/paddnols/10G.gz
 
-/* ---- which Sec-Fetch-Site values are "initiated from off-site" -----
- * These are the embed/weaponization signatures. They must never count
- * toward a ban, because a member's browser made them under someone
- * else's instructions, not their own.
- * ------------------------------------------------------------------ */
+/* Sec-Fetch-Site values that mean "initiated from off-site" (the embed
+ * weaponization signature). These never count toward a ban. */
 const PD_OFFSITE_FETCH = ['cross-site', 'same-site'];
 
 function pd_log_hit(): void {
@@ -73,8 +72,10 @@ function pd_log_hit(): void {
 }
 
 /* ---- bomb: armed? --------------------------------------------------
- * Live only if the switch is on AND the payload actually exists. Missing
- * file => quiet fall back to a normal 403, never a broken response.
+ * Live only if the switch is on AND the payload exists. Missing file =>
+ * quiet fall back to a normal 403, never a broken response.
+ * To toggle live without editing this file, swap the PD_BOMB_ENABLED
+ * check for a sentinel: is_readable(__DIR__ . '/bomb.armed')
  * ------------------------------------------------------------------ */
 function pd_bomb_armed(): bool {
     return PD_BOMB_ENABLED && is_readable(PD_BOMB_FILE);
@@ -100,7 +101,23 @@ function pd_send_bomb(): void {
     exit;
 }
 
+/* ---- degraded alert ------------------------------------------------
+ * Best-effort, throttled ping when pd_guard() fails open. Uses a temp
+ * FILE for throttling, not the DB — the DB may be the thing that's down.
+ * Never throws.
+ * ------------------------------------------------------------------ */
+function pd_guard_degraded(Throwable $e): void {
+    try {
+        $flag = sys_get_temp_dir() . '/pd_guard_degraded';
+        if (!is_file($flag) || (time() - @filemtime($flag)) > 300) {   // once / 5 min
+            @touch($flag);
+            pd_notify('🛟 Guard degraded — serving UNGUARDED for now: ' . $e->getMessage());
+        }
+    } catch (Throwable $ignored) { /* alerting must never break the page */ }
+}
+
 function pd_guard(): void {
+  try {
     $pdo = pd_pdo();
     $ip  = $_SERVER['REMOTE_ADDR'] ?? '';
     $uri = $_SERVER['REQUEST_URI'] ?? '';
@@ -121,10 +138,9 @@ function pd_guard(): void {
     $browserRequest = isset($_SERVER['HTTP_SEC_FETCH_SITE']);
 
     // --- RULE 1: honeypot (intent) -> instant ban (+ bomb) -----------
-    //     Paths no human or benign crawler ever requests. ONE hit from a
-    //     non-browser is unambiguously hostile. A BROWSER hitting a trap,
-    //     though, is a member tricked via an embedded <img>/<iframe> or a
-    //     posted link — never punish them; quiet 404 instead.
+    //     A non-browser hitting these is unambiguously hostile. A BROWSER
+    //     hitting one is a member tricked via an embedded <img>/<iframe>
+    //     or a posted link — never punish them; quiet 404 instead.
     $traps = [
         '/.env',
         '/.aws',
@@ -151,13 +167,12 @@ function pd_guard(): void {
 
         if ($browserRequest) {
             // A member's browser was sent here, not a scanner. Don't ban,
-            // don't bomb. If it arrived cross-site, that's the embed
-            // signature — tip Paddy off that someone may be weaponizing
-            // a trap, then 404 the victim harmlessly.
+            // don't bomb. If it came cross-site, that's the embed signature
+            // — tip Paddy off, then 404 the victim harmlessly.
             $fs = strtolower($_SERVER['HTTP_SEC_FETCH_SITE'] ?? '');
             if (in_array($fs, PD_OFFSITE_FETCH, true)) {
                 $ref = $_SERVER['HTTP_REFERER'] ?? '(referrer hidden)';
-                pd_notify("⚠️ Trap weaponization? Victim `$ip` → `$uri` (Embedded on `$ref`)");
+                pd_notify("⚠️ Trap weaponization? Victim `$ip` → `$uri` (embedded on `$ref`)");
             }
             http_response_code(404); exit;
         }
@@ -178,10 +193,9 @@ function pd_guard(): void {
 
     // --- RULE 2: burst (volume) -> overload / DDOS protection --------
     //     5+ requests from one IP within 20 seconds. Short 24h ban —
-    //     often just an impatient real person.
-    //     Cross-site / same-site requests are EXCLUDED: an attacker can
-    //     embed nine <img> tags pointing at real URLs to make a victim's
-    //     browser trip this rule. Legit same-origin browsing still counts.
+    //     often just an impatient real person. Cross-site / same-site
+    //     requests are EXCLUDED so an embedded batch of <img> tags can't
+    //     trip it; legit same-origin browsing still counts.
     $burst = $pdo->prepare(
         "SELECT COUNT(*) FROM pd_access_log
          WHERE ip = ? AND created_at > (NOW() - INTERVAL 20 SECOND)
@@ -198,11 +212,10 @@ function pd_guard(): void {
 
     // --- RULE 3: scan (intent) -> credential / vuln scrapers ---------
     //     4+ "file not found" (404) hits from one IP within 10 minutes.
-    //     Catches slow scanners that dodge the burst rule — and the
-    //     headless-browser scanner that dodged the honeypot insta-ban,
-    //     since its 404s aren't cross-site and still accumulate here.
-    //     Cross-site / same-site 404s are EXCLUDED so an embedded batch
-    //     of trap URLs can't push a tricked victim over the threshold.
+    //     Catches slow scanners and the headless-browser scanner that
+    //     dodged the honeypot insta-ban. Cross-site / same-site 404s are
+    //     EXCLUDED so an embedded batch of trap URLs can't push a tricked
+    //     victim over the threshold.
     $miss = $pdo->prepare(
         "SELECT COUNT(*) FROM pd_access_log
          WHERE ip = ? AND status = 404
@@ -217,4 +230,12 @@ function pd_guard(): void {
         pd_notify("🚨 Banned `$ip` — Scraping");
         http_response_code(403); exit;
     }
+
+  } catch (Throwable $e) {
+    // Fail OPEN: serve the page unguarded rather than 500 the whole site.
+    // (Intentional 403/bomb paths exit before reaching here, so real bans
+    // and bombs are unaffected — only genuine errors land in this catch.)
+    pd_guard_degraded($e);
+    return;
+  }
 }
