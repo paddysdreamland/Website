@@ -1,7 +1,5 @@
-document.addEventListener("DOMContentLoaded", () => {
-    const newsSection = document.getElementById("news-section");
-
-    function renderPost(id, post) {
+document.addEventListener("DOMContentLoaded", async () => {
+    function renderPost(post) {
         const container = document.createElement("div");
         container.className = "section-container";
 
@@ -57,36 +55,36 @@ document.addEventListener("DOMContentLoaded", () => {
         return container;
     }
 
-    // Sort post keys by date, newest first (optional)
-    const sortedKeys = Object.keys(newsPosts).sort((a, b) => {
-        const dateA = new Date(newsPosts[a].postDate);
-        const dateB = new Date(newsPosts[b].postDate);
-        return dateB - dateA;
-    });
+    let posts;
+    try {
+        const response = await fetch("pd_posts.php");
+        if (!response.ok) throw new Error(`Request failed: ${response.status}`);
+        posts = await response.json();
+    } catch (err) {
+        console.error("Failed to load news posts:", err);
+        return;
+    }
 
-    // Inject all posts
+    // The endpoint already returns visible posts, newest first.
+    const [latest, ...previous] = posts;
+
     const latestHeader = document.querySelector("#news-section .main-header:nth-of-type(1)");
     const previousHeader = document.querySelector("#news-section .main-header:nth-of-type(2)");
 
-    const visiblePosts = sortedKeys.filter(k => !newsPosts[k].hidden);
-    const [latestKey, ...previousKeys] = visiblePosts;
-
-    if (latestHeader && latestKey) {
-        const post = renderPost(latestKey, newsPosts[latestKey]);
-        latestHeader.insertAdjacentElement("afterend", post);
+    if (latestHeader && latest) {
+        latestHeader.insertAdjacentElement("afterend", renderPost(latest));
     }
 
     if (previousHeader) {
-        [...previousKeys].reverse().forEach(key => {
-            const post = renderPost(key, newsPosts[key]);
-            previousHeader.insertAdjacentElement("afterend", post);
+        // Insert oldest first so repeated afterend inserts leave newest at the top.
+        [...previous].reverse().forEach(post => {
+            previousHeader.insertAdjacentElement("afterend", renderPost(post));
         });
     }
 
     const homeHeader = document.querySelector("#home-section .main-header:nth-of-type(2)");
 
-    if (homeHeader && latestKey) {
-        const homePost = renderPost(latestKey, newsPosts[latestKey]);
-        homeHeader.insertAdjacentElement("afterend", homePost);
+    if (homeHeader && latest) {
+        homeHeader.insertAdjacentElement("afterend", renderPost(latest));
     }
 });
