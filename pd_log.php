@@ -145,12 +145,15 @@ function pd_guard(): void {
         '/.env',
         '/.aws',
         '/.git',
+        '/.dev',
+        '/.ssh',
+        '/.vscode',
         '/wp-login.php',
         '/wp-content',
+        '/wp-includes',
         '/wp-admin',
         '/wp-json',
         '/config.json',
-        '/.ssh',
         '/vendor',
         '/admin',
         '/mod',
@@ -159,7 +162,10 @@ function pd_guard(): void {
         '/thisthing',
         '/thatthing',
         '/andthisthing',
-        '/andthatthing'
+        '/andthatthing',
+        '/enhancecp',
+        '/plugins',
+        '/shell.php'
     ];
 
     foreach ($traps as $t) {
