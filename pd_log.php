@@ -217,7 +217,7 @@ function pd_guard(): void {
     }
 
     // --- RULE 3: scan (intent) -> credential / vuln scrapers ---------
-    //     4+ "file not found" (404) hits from one IP within 10 minutes.
+    //     4+ "file not found" (404) hits from one IP within 4 seconds.
     //     Catches slow scanners and the headless-browser scanner that
     //     dodged the honeypot insta-ban. Cross-site / same-site 404s are
     //     EXCLUDED so an embedded batch of trap URLs can't push a tricked
@@ -225,7 +225,7 @@ function pd_guard(): void {
     $miss = $pdo->prepare(
         "SELECT COUNT(*) FROM pd_access_log
          WHERE ip = ? AND status = 404
-           AND created_at > (NOW() - INTERVAL 10 MINUTE)
+           AND created_at > (NOW() - INTERVAL 4 SECOND)
            AND (fetch_site IS NULL OR fetch_site NOT IN ('cross-site','same-site'))");
     $miss->execute([$ip]);
     if ((int)$miss->fetchColumn() >= 4) {
