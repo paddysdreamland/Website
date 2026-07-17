@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>JtE – Stream Overlay</title>
+        <link rel="stylesheet" href="styles/jte_widgets.css">
+        <link rel="stylesheet" href="styles/obs_scenecards.css">
+        <link rel="stylesheet" href="styles/pd_main.css">
+
+        <!-- Chat only. The widget scripts (heartrate/stats/music) self-abort when
+             their elements are absent, so they're simply omitted rather than guarded.
+             jte_log.js + jte_control.js stay: together they make this page the
+             console for the WHOLE system (it renders logs relayed from the other
+             overlays) and let the Stream Deck OSC button reconnect chat. -->
+        <script src="scripts/jte_log.js"></script>
+        <script src="scripts/jte_control.js"></script>
+
+        <script src="scripts/jte_twitch_chat.js"></script>
+
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+
+    <body style="background-color: rgb(32, 32, 32)">
+        <div id="chat-anchor" class="wrapper-bl fullscreen">
+            <div id="chat-wrapper" class="chat-wrapper-reverse fullscreen">
+                <!-- Twitch and YouTube messages will appear here. -->
+                <!-- Don't forget the helper script to bridge YouTube's chat. -->
+            </div>
+        </div>
+    </body>
+</html>

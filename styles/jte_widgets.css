@@ -1,40 +1,172 @@
 :root {
-    --wrapper-padding: 32px;
+    --wrapper-padding: 24px;
 
     --chat-width: 512px;
-    --chat-height: 960px;
+    --chat-height: 384px;
 
     --msg-border-size: 4px;
     --msg-drop-shadow: drop-shadow(0px 0px 2px rgba(0, 0, 0, 0.5));
+
+    --catalyst-border-color: 255, 255, 255, 0.25;
+    --catalyst-bg-color: 0, 0, 0;
+    --catalyst-bg-alpha: 0.5;
+}
+
+.wrapper-tl,
+.wrapper-bl,
+.wrapper-bc,
+.wrapper-br {
+    filter: drop-shadow(0px 0px 16px black);
+}
+
+.wrapper-tl {
+    position: fixed; left: 0px; top: 0px;
+    padding: var(--wrapper-padding);
 }
 
 .wrapper-bl {
-    position: fixed; bottom: 0px; left: 0px;
+    position: fixed; left: 0px; bottom: 0px;
+}
+
+.wrapper-bc {
+    position: fixed; left: 50%; bottom: 0px;
+    transform: translate(-50%, 0);
+    padding: var(--wrapper-padding);
+}
+
+.wrapper-br {
+    position: fixed; right: 0px; bottom: 0px;
+    padding: var(--wrapper-padding);
+
+    display: flex;
+    align-items: flex-end;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.fullscreen {
+    width: 100%; height: 100%
+}
+
+.ad-wrapper {
+    background: linear-gradient(
+        to right,
+        rgba(0, 0, 0, 0.25) 0%,
+        rgba(0, 0, 0, 0.75) 50%,
+        rgba(0, 0, 0, 0.25) 100%
+    ), var(--holder-background-image);
+
+    border-radius: 4px;
+    padding: 0 calc(var(--msg-border-size) * 4);
+
+    display: flex; flex-direction: column;
+}
+
+.ad-text {
+    color: rgb(255, 255, 255);
+    font-family: "Tahoma";
+    font-size: 24px;
+    min-height: 40px;
+    padding-bottom: 5px;
+    align-content: center;
+    filter: var(--msg-drop-shadow);    
 }
 
 .chat-wrapper {
-    mask-image: linear-gradient(to top, white 0%, white 80%, transparent 100%);
-    width: var(--chat-width); height: var(--chat-height);
     padding: var(--wrapper-padding);
-
     display: flex; flex-direction: column-reverse;
     align-items: flex-start; gap: 4px;
 }
 
+.chat-wrapper-reverse {
+    padding: var(--wrapper-padding);
+    display: flex; flex-direction: column;
+    align-items: flex-start; gap: 4px;
+}
+
+.msg-wrapper,
+.msg-wrapper-inverted {
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+}
+
 .msg-wrapper {
-    background: linear-gradient(
+    /*background: linear-gradient(
         to right,
         rgba(0, 0, 0, 0.75) 0%,
         rgba(0, 0, 0, 0.25) 100%
     ), var(--holder-background-image);
 
-    border-radius: 4px;
     border-left: 4px solid var(--msg-user-color, rgb(192, 192, 192));
-
     padding-left: var(--msg-border-size);
-    padding-right: calc(var(--msg-border-size) * 2);
+    padding-right: calc(var(--msg-border-size) * 2);*/
 
-    display: flex; flex-direction: column;
+    background: linear-gradient(
+        to right,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 0%,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 100%
+    ), var(--holder-background-mask);
+
+    padding-left: calc(var(--msg-border-size) * 2);
+    padding-right: calc(var(--msg-border-size) * 2);
+}
+
+.msg-wrapper-inverted {
+    /*background: linear-gradient(
+        to left,
+        rgba(0, 0, 0, 0.75) 0%,
+        rgba(0, 0, 0, 0.25) 100%
+    ), var(--holder-background-image);
+
+    border-right: 4px solid var(--msg-user-color, rgb(192, 192, 192));
+    padding-left: calc(var(--msg-border-size) * 2);
+    padding-right: var(--msg-border-size);*/
+
+    background: linear-gradient(
+        to right,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 0%,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 100%
+    ), var(--holder-background-mask);
+
+    padding-left: calc(var(--msg-border-size) * 2);
+    padding-right: calc(var(--msg-border-size) * 2);
+}
+
+.msg-wrapper::before,
+.msg-wrapper::after,
+.msg-wrapper-inverted::before,
+.msg-wrapper-inverted::after,
+.misc-wrapper::before,
+.misc-wrapper::after,
+.toast-wrapper::before,
+.toast-wrapper::after {
+    content: "";
+    height: 100%; width: 4px;
+    position: absolute; top: 0;
+    box-sizing: border-box;
+    border-top: 2px solid rgba(var(--catalyst-border-color));
+    border-bottom: 2px solid rgba(var(--catalyst-border-color));
+    display: block;
+    z-index: 50;
+}
+
+.msg-wrapper::before,
+.msg-wrapper-inverted::before,
+.misc-wrapper::before,
+.toast-wrapper::before {
+    border-left: 2px solid rgba(var(--catalyst-border-color));
+    border-radius: 4px 0px 0px 4px;
+    left: 0px;
+}
+
+.msg-wrapper::after,
+.msg-wrapper-inverted::after,
+.misc-wrapper::after,
+.toast-wrapper::after {
+    border-right: 2px solid rgba(var(--catalyst-border-color));
+    border-radius: 0px 4px 4px 0px;
+    right: 0;
 }
 
 .msg-author,
@@ -82,42 +214,21 @@
     top: -2px;
 }
 
-/* ─── Highlighted Messages (channel points) ─────────────────────────── */
-.msg-highlight {
+/* ─── Event Messages ────────────────────────────────────────────────── */
+.msg-highlight,
+.msg-firstmsg,
+.msg-bits {
     background: linear-gradient(
         to right,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 50%, transparent) 0%,
+        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 0%, transparent) 100%
     ), var(--holder-background-mask);
-}
 
-.msg-highlight::after {
-    content: ""; position: absolute; inset: 0;
-
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
-    ); filter: blur(8px); z-index: -1;
-}
-
-/* ─── First-time chatter ────────────────────────────────────────────── */
-.msg-firstmsg {
-    background: linear-gradient(
-        to right,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
-    ), var(--holder-background-mask);
-}
-
-.msg-firstmsg::after {
-    content: ""; position: absolute; inset: 0;
-
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
-    ); filter: blur(4px); z-index: -1;
+    /*background: linear-gradient(
+        to left,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 0%,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 100%
+    ), var(--holder-background-mask);*/
 }
 
 /* ─── /me actions ───────────────────────────────────────────────────── */
@@ -125,45 +236,10 @@
     font-style: italic;
 }
 
-/* ─── Bits / Cheers ─────────────────────────────────────────────────── */
-.msg-bits {
-    background: linear-gradient(
-        to right,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
-    ), var(--holder-background-mask);
-}
-
-.msg-bits::after {
-    content: ""; position: absolute; inset: 0;
-
-    background: linear-gradient(
-        90deg,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 75%, transparent) 0%,
-        color-mix(in srgb, var(--msg-user-color, rgb(0, 255, 192)) 25%, transparent) 100%
-    ); filter: blur(4px); z-index: -1;
-}
-
 /* ─── Deleted / Timed-out messages ──────────────────────────────────── */
 .msg-deleted {
-    width: 150px; height: 20px;
+    width: 20px; height: 20px;
     opacity: 1;
-}
-
-.msg-wrapper.msg-deleted {
-    border-left: var(--msg-border-size) solid rgb(192, 192, 192) !important;
-}
-
-.msg-deleted::after {
-    content: "MESSAGE DELETED"; position: absolute; inset: 0;
-    color: rgb(192, 192, 192);
-    font-family: "Tahoma";
-    font-size: 14px;
-    font-weight: bold;
-    text-align: center;
-    align-content: center;
-
-    filter: var(--msg-drop-shadow);
 }
 
 .msg-deleted > .msg-author,
@@ -174,10 +250,6 @@
 /* ─── Presence / Join events ────────────────────────────────────────── */
 :root {
     --presence-color: 128, 128, 128;
-}
-
-.presence-event {
-    border-left: var(--msg-border-size) solid rgb(192, 192, 192);
 }
 
 .presence-text {
@@ -192,9 +264,10 @@
 
 /* ─── Console / Log events ──────────────────────────────────────────── */
 :root {
-    --log-hint-color: 128, 192, 192;
+    --log-hint-color: 128, 192, 255;
     --log-warn-color: 255, 255, 192;
     --log-error-color: 255, 192, 192;
+    --log-notice-color: 192, 255, 192;
 }
 
 .log-event {
@@ -205,53 +278,68 @@
 .msg-wrapper.log-hint {
     background: linear-gradient(
         to right,
-        rgba(var(--log-hint-color), 0.75) 0%,
-        rgba(var(--log-hint-color), 0.25) 100%
+        rgba(var(--log-hint-color), 0.5) 0%,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 100%
     ), var(--holder-background-mask);
 }
 
 .msg-wrapper.log-warn {
     background: linear-gradient(
         to right,
-        rgba(var(--log-warn-color), 0.75) 0%,
-        rgba(var(--log-warn-color), 0.25) 100%
+        rgba(var(--log-warn-color), 0.5) 0%,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 100%
     ), var(--holder-background-mask);
 }
 
 .msg-wrapper.log-error {
     background: linear-gradient(
         to right,
-        rgba(var(--log-error-color), 0.75) 0%,
-        rgba(var(--log-error-color), 0.25) 100%
+        rgba(var(--log-error-color), 0.5) 0%,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 100%
     ), var(--holder-background-mask);
 }
 
-.msg-icon {
+.msg-icon,
+.msg-icon-inverted {
     background-color: rgb(192, 192, 192);
     background-position: center center;
     background-repeat: no-repeat;
-    flex: 0 0 20px; width: 20px; height: auto;
+    width: 20px;
+    height: auto;
+    flex: 0 0 20px; 
+}
+
+.msg-icon {
     border-radius: 4px 0 0 4px;
     left: -8px;
 }
 
-.log-hint > .msg-icon {
-    background-color: rgb(128, 192, 255);
+.msg-icon-inverted {
+    border-radius: 0 4px 4px 0;
+    right: -8px;
+}
+
+.log-hint > .msg-icon,
+.log-hint > .msg-icon-inverted {
+    background-color: rgb(var(--log-hint-color));
     background-image: url("../images/silk/information.png");
 }
 
-.log-warn > .msg-icon {
-    background-color: rgb(255, 255, 192);
+.log-warn > .msg-icon,
+.log-warn > .msg-icon-inverted {
+    background-color: rgb(var(--log-warn-color));
     background-image: url("../images/silk/error.png");
 }
 
-.log-error > .msg-icon {
-    background-color: rgb(255, 192, 192);
+.log-error > .msg-icon,
+.log-error > .msg-icon-inverted {
+    background-color: rgb(var(--log-error-color));
     background-image: url("../images/silk/exclamation.png");
 }
 
-.log-event > .msg-content {
-    
+.log-notice > .msg-icon-inverted {
+    background-color: rgb(var(--log-notice-color));
+    background-image: url("../images/silk/comments_add.png");
 }
 
 /* ─── Message slot (two-helper entrance) ────────────────────────────── */
@@ -266,8 +354,12 @@
     animation: slot-open 0.4s ease-out forwards;  /* hold until JS sets none */
 }
 
+.chat-wrapper-reverse > .msg-slot {
+    flex-direction: column-reverse;
+}
+
 @keyframes slot-open {
-    to { 
+    to {
         max-height: var(--open-h, 256px);
     }
 }
@@ -284,6 +376,231 @@
     } 80% {
         transform: translateX(-5px); 
     } 100% {
-        transform: translateX(0px); 
+        transform: translateX(0px);
     }
+}
+
+/* ─── Misc widget ───────────────────────────────────────────────────── */
+.misc-wrapper {
+    background: linear-gradient(
+        to left,
+        rgba(var(--catalyst-bg-color), 0.5) 0%,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 100%
+    ), var(--holder-background-mask);
+
+    height: 40px;
+    padding: 4px;
+    border-radius: 4px;
+    
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 4px;
+}
+
+.misc-wrapper.heart-rate {
+    background: linear-gradient(
+        to left,
+        rgba(var(--log-error-color), 0.5) 0%,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 100%
+    ), var(--holder-background-mask);
+}
+
+.misc-wrapper.viewers {
+    background: linear-gradient(
+        to left,
+        rgba(var(--log-hint-color), 0.5) 0%,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 100%
+    ), var(--holder-background-mask);
+}
+
+.misc-wrapper.followers {
+    background: linear-gradient(
+        to left,
+        rgba(var(--log-notice-color), 0.5) 0%,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 100%
+    ), var(--holder-background-mask);
+}
+
+.misc-wrapper.flags {
+    background: linear-gradient(
+        to left,
+        rgba(var(--log-warn-color), 0.5) 0%,
+        rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha)) 100%
+    ), var(--holder-background-mask);
+}
+
+.misc-icon {
+    background-color: rgb(192, 192, 192);
+    background-position: center center;
+    background-repeat: no-repeat;
+    width: 32px; height: 32px;
+    border-radius: var(--msg-border-size);
+}
+
+.heart-rate > .misc-icon {
+    background-color: rgb(var(--log-error-color));
+    background-image: url("../images/silk/heart.png");
+}
+
+.viewers > .misc-icon {
+    background-color: rgb(var(--log-hint-color));
+    background-image: url("../images/silk/eye.png");
+}
+
+.followers > .misc-icon {
+    background-color: rgb(var(--log-notice-color));
+    background-image: url("../images/silk/group.png");
+}
+
+.flags > .misc-icon {
+    background-color: rgb(var(--log-warn-color));
+    background-image: url("../images/silk/rainbow.png");
+}
+
+.misc-text {
+    color: rgb(255, 255, 255);
+    font-family: "HalfLife2";
+    font-size: 32px;
+    font-weight: 900;
+    align-self: center;
+    padding: 0 16px;
+    bottom: 2px;
+    filter: var(--msg-drop-shadow);
+}
+
+.misc-text.heart-rate {
+    animation: hr-beat var(--beat, 1s) ease-in-out infinite;
+}
+
+@keyframes hr-beat {
+    0%, 40%, 100% {
+        color: rgba(255, 255, 255, 1);
+    } 20% {
+        color: rgba(255, 192, 192, 1);
+    }
+}
+
+.misc-flag-wrapper {
+    padding: 0px 16px;
+}
+
+.misc-flag {
+    background-position: center center;
+    background-size: cover;
+    height: 32px;
+    aspect-ratio: 6 / 4;
+    border-radius: var(--msg-border-size);
+    
+}
+
+.misc-flag.pan {
+    background-image: url("../images/flags/pan.svg");
+}
+
+.misc-flag.trans {
+    background-image: url("../images/flags/trans.svg");
+}
+
+.misc-flag.transpan {
+    background-image: url("../images/flags/transpan_mix.png");
+}
+
+/* ─── Toast Widget ──────────────────────────────────────────────────── */
+.toast-wrapper {
+    background-color: rgba(var(--catalyst-bg-color), var(--catalyst-bg-alpha));
+    background-image: var(--holder-background-mask);
+    border-radius: var(--msg-border-size);
+    padding: 8px;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    overflow: hidden;
+}
+
+.toast-wrapper.show {
+    animation: slot-slide 0.8s ease-in-out forwards;
+}
+
+.toast-wrapper.hide {
+    animation: toast-slide-out 0.8s ease-in-out forwards;
+}
+
+@keyframes toast-slide-out {
+    0% {
+        transform: translateX(0px);
+    } 20% {
+        transform: translateX(-5px);
+    } 40% {
+        transform: translateX(10px);
+    } 100% {
+        transform: translateX(var(--slide-from, -200%));
+    }
+}
+
+.toast-wrapper[data-state="playing"] {
+
+}
+
+.toast-wrapper[data-state="paused"] {
+    
+}
+
+.toast-album-image-bg {
+    background-position: center center;
+    background-size: cover;
+    width: 100%; height: 100%;
+    position: absolute;
+    left: 0; top: 0;
+    border-radius: 4px;
+    filter: blur(8px);
+    opacity: 1;
+    mix-blend-mode: difference;
+}
+
+.toast-album-image {
+    background-size: cover;
+    min-width: 112px; min-height: 112px;
+    border-radius: 4px;
+    filter: var(--msg-drop-shadow);
+}
+
+.toast-info-wrapper {
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+}
+
+#toast-now-playing,
+#toast-title,
+#toast-artist,
+#toast-album,
+#toast-length {
+    color: rgb(255, 255, 255);
+    font-family: "Tahoma";
+    filter: var(--msg-drop-shadow);
+}
+
+#toast-title {
+    font-size: 24px;
+    font-weight: 900;
+}
+
+#toast-artist {
+    font-size: 16px;
+}
+
+#toast-album {
+    font-size: 12px;
+    font-weight: 900;
+}
+
+#toast-now-playing,
+#toast-length {
+    font-size: 10px;
+    font-weight: 900;
+}
+
+#toast-length {
+    text-align: right;
 }

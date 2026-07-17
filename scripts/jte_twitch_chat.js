@@ -1,7 +1,7 @@
 // ─── Config ───────────────────────────────────────────────────────────────
 const CHANNEL = "paddysdreamland";
 const FALLBACK_COLOR = "rgb(192, 192, 192)";
-const MAX_MESSAGES = 20;
+const MAX_MESSAGES = 40;
 
 // ─── Helper Functions ───────────────────────────────────────────────────
 const CHAT_SOUND = new Audio("sounds/buttonrollover.wav");
@@ -17,6 +17,9 @@ const BOT_USERNAMES = new Set([
     "nightbot", "streamelements", "streamlabs", "soundalerts",
     "moobot", "fossabot", "wizebot", "deepbot"
 ]);
+
+// Chat commands that replay the music toast (case-insensitive, exact match)
+const NOWPLAYING_COMMANDS = new Set(["!nowplaying", "!np"]);
 
 // Emote CDN templates
 const TWITCH_EMOTE_URL = (id) =>
@@ -48,6 +51,9 @@ const PRESENCE_MESSAGES = [
 
 document.addEventListener("DOMContentLoaded", () => {
     const chatWrapper = document.getElementById("chat-wrapper");
+    // No chat on this page (a widgets-only overlay) → nothing to render into.
+    // Bail like the other widget scripts do, rather than throwing on first log.
+    if (!chatWrapper) return;
 
     // ─── Presence state (closure scope — survives reconnects) ─────────────
     // announced: dedup + flood absorber. Lives out here so a dropped socket
@@ -227,6 +233,18 @@ document.addEventListener("DOMContentLoaded", () => {
     function addMessage(data) {
         if (BOT_USERNAMES.has(data.username.toLowerCase())) return;
 
+        // Chat command → replay the music toast. Still renders the message
+        // normally; add `return;` here if you'd rather hide the command itself.
+        // The toast usually lives on ANOTHER overlay page now, so this goes over
+        // the bus as well as locally. The hub never echoes a message back to its
+        // sender, so a toast sharing this page can't fire twice.
+        if (NOWPLAYING_COMMANDS.has(data.message.trim().toLowerCase())) {
+            window.dispatchEvent(new CustomEvent("overlay:nowplaying-request"));
+            if (window.overlayPublish) {
+                window.overlayPublish({ type: "nowplaying-request" });
+            }
+        }
+
         playChatSound();
 
         const msgWrapper = document.createElement("div");
@@ -399,8 +417,13 @@ document.addEventListener("DOMContentLoaded", () => {
         appendToChat(wrapper);
     }
 
-    // ─── Log Events ───────────────────────────────────────────────────────
-    // System notices rendered inline in the chat stream. Mirrors the templates:
+    // ─── Log Events (RENDERER) ────────────────────────────────────────────
+    // The capture side (console mirror, error handlers, fetch/WebSocket
+    // wrappers) lives in jte_log.js, which runs on EVERY overlay page and emits
+    // "overlay:log" events. This file is the only place that draws them, so the
+    // chat overlay acts as the on-stream console for the whole system —
+    // including logs relayed from other overlay pages via jte_control.js.
+    //
     //   <div class="msg-wrapper log-event log-hint">
     //     <div class="msg-icon"></div>
     //     <div class="msg-content">…</div>
@@ -408,20 +431,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // Levels: "hint" | "warn" | "error".
     const LOG_LEVELS = new Set(["hint", "warn", "error"]);
 
-    // Captured up front so renderLog (and the console mirror below) never route
-    // their own output back through a patched console — that would recurse.
-    const ORIG_CONSOLE = {
-        log:   console.log.bind(console),
-        warn:  console.warn.bind(console),
-        error: console.error.bind(console),
-    };
-
-    // DOM-only: builds and inserts the notice. Does NOT touch the console, so
-    // it's safe to call from inside the console mirror.
-    function renderLog(level, message) {
+    // DOM-only: builds and inserts the notice. Never touches the console, so
+    // it's safe to call from inside the mirror.
+    function renderLog(level, message, source) {
         if (!LOG_LEVELS.has(level)) level = "hint";
 
-        playChatSound();
+        //playChatSound();
 
         const wrapper = document.createElement("div");
         wrapper.classList.add("msg-wrapper", "log-event", `log-${level}`);
@@ -429,152 +444,25 @@ document.addEventListener("DOMContentLoaded", () => {
         const icon = document.createElement("div");
         icon.classList.add("msg-icon");
 
+        // Tag logs that came from another overlay page, e.g. "[music] Uncaught…"
+        const remote = source && source !== window.OVERLAY_SOURCE;
+
         const content = document.createElement("div");
         content.classList.add("msg-content");
-        content.textContent = message;
+        if (remote) wrapper.classList.add("log-remote");
+        content.textContent = remote ? `[${source}] ${message}` : message;
 
         wrapper.appendChild(icon);
         wrapper.appendChild(content);
         appendToChat(wrapper);
     }
 
-    // Public API: echo to the real console at matching severity, then render.
-    function logEvent(level, message) {
-        if (!LOG_LEVELS.has(level)) {
-            ORIG_CONSOLE.warn(`logEvent: unknown level "${level}" — defaulting to "hint"`);
-            level = "hint";
-        }
-        const echo = level === "error" ? ORIG_CONSOLE.error
-                   : level === "warn"  ? ORIG_CONSOLE.warn
-                   :                     ORIG_CONSOLE.log;
-        echo(`[${level}] ${message}`);
-        renderLog(level, message);
-    }
+    const renderLogEvent = (d) => renderLog(d.level, d.message, d.source);
 
-    // ─── Console mirror ───────────────────────────────────────────────────
-    // When on, real console.log / warn / error also surface in the overlay.
-    // log → hint, warn → warn, error → error. The original console still runs
-    // first (devtools + OBS log keep their copy); we only ADD the overlay node.
-    const MIRROR_CONSOLE = true;
-
-    // Stringify console args the way devtools roughly would, so objects/Errors
-    // don't render as "[object Object]".
-    function formatLogArgs(args) {
-        return args.map(a => {
-            if (typeof a === "string") return a;
-            if (a instanceof Error)    return a.stack || `${a.name}: ${a.message}`;
-            try { return JSON.stringify(a); } catch { return String(a); }
-        }).join(" ");
-    }
-
-    if (MIRROR_CONSOLE) {
-        // Re-entrancy guard: if rendering itself logs (or throws and something
-        // logs), we don't want to spawn another overlay node mid-render.
-        let mirroring = false;
-
-        const mirror = (origFn, level) => (...args) => {
-            origFn(...args);                 // always keep native behaviour
-            if (mirroring) return;
-            mirroring = true;
-            try {
-                renderLog(level, formatLogArgs(args));
-            } catch (e) {
-                ORIG_CONSOLE.error("console mirror failed:", e);
-            } finally {
-                mirroring = false;
-            }
-        };
-
-        console.log   = mirror(ORIG_CONSOLE.log,   "hint");
-        console.warn  = mirror(ORIG_CONSOLE.warn,  "warn");
-        console.error = mirror(ORIG_CONSOLE.error, "error");
-    }
-
-    // ─── Global error capture ─────────────────────────────────────────────
-    // The console mirror only sees what flows through console.*. Uncaught
-    // exceptions and rejected promises are printed by the browser engine
-    // itself and never call console.error, so they'd slip past. These window
-    // handlers catch them and route them into the overlay as error notices.
-    // We go through ORIG_CONSOLE.error (not the patched console.error) so the
-    // real devtools/OBS log still gets its native copy, and renderLog draws
-    // the node directly — avoiding a double render via the mirror.
-    window.addEventListener("error", (event) => {
-        // Resource load failures (img/script/link) fire here too, but with no
-        // .error object and the failed element as the target.
-        if (event.error) {
-            const e = event.error;
-            const where = event.filename
-                ? ` (${event.filename}:${event.lineno}:${event.colno})`
-                : "";
-            ORIG_CONSOLE.error("Uncaught", e);
-            renderLog("error", `Uncaught ${e.stack || `${e.name}: ${e.message}`}${where}`);
-        } else if (event.target && event.target !== window) {
-            const el = event.target;
-            const src = el.src || el.href || "(unknown)";
-            ORIG_CONSOLE.error("Resource failed to load:", src);
-            renderLog("error", `Failed to load ${el.tagName.toLowerCase()}: ${src}`);
-        } else {
-            ORIG_CONSOLE.error("Error:", event.message);
-            renderLog("error", event.message || "Unknown error");
-        }
-    }, true); // capture phase — resource errors don't bubble
-
-    window.addEventListener("unhandledrejection", (event) => {
-        const r = event.reason;
-        const text = r instanceof Error ? (r.stack || `${r.name}: ${r.message}`)
-                   : typeof r === "string" ? r
-                   : (() => { try { return JSON.stringify(r); } catch { return String(r); } })();
-        ORIG_CONSOLE.error("Unhandled promise rejection:", r);
-        renderLog("error", `Unhandled rejection: ${text}`);
-    });
-
-    // ─── Network primitive wrappers ───────────────────────────────────────
-    // fetch() and WebSocket failures are logged by the browser's network stack
-    // as red lines no page handler can intercept. We can't silence those, but
-    // wrapping the primitives once here makes every failure ALSO surface in the
-    // overlay — so call sites don't each have to remember error handling.
-
-    // fetch: ONLY a network-level failure rejects (DNS, offline, refused, CORS).
-    // A 404/500 still RESOLVES, so HTTP status stays the caller's concern
-    // (check res.ok). We log the reject, then re-throw so existing try/catch
-    // blocks keep behaving exactly as before.
-    const ORIG_FETCH = window.fetch.bind(window);
-    window.fetch = async (...args) => {
-        try {
-            return await ORIG_FETCH(...args);
-        } catch (e) {
-            const req = args[0];
-            const url = typeof req === "string" ? req
-                      : req && req.url ? req.url
-                      : "(unknown)";
-            ORIG_CONSOLE.error("fetch failed:", url, e);
-            renderLog("error", `Network request failed: ${url} — ${e.message}`);
-            throw e;
-        }
-    };
-
-    // WebSocket: wrap the constructor so every socket reports a failed
-    // connection with its URL (the raw "error" event carries no detail, by
-    // design). We use addEventListener so we never clobber a caller's own
-    // onerror/onmessage handlers — this is purely additive.
-    const ORIG_WEBSOCKET = window.WebSocket;
-    window.WebSocket = function (...args) {
-        const ws = new ORIG_WEBSOCKET(...args);
-        ws.addEventListener("error", () => {
-            ORIG_CONSOLE.error("WebSocket error:", args[0]);
-            renderLog("error", `WebSocket connection failed: ${args[0]}`);
-        });
-        return ws;
-    };
-    // Preserve the prototype + readyState statics so `instanceof WebSocket`
-    // and `WebSocket.OPEN`/`.CLOSED` etc. still resolve correctly.
-    window.WebSocket.prototype = ORIG_WEBSOCKET.prototype;
-    ["CONNECTING", "OPEN", "CLOSING", "CLOSED"].forEach((k) => {
-        window.WebSocket[k] = ORIG_WEBSOCKET[k];
-    });
-
-    // Console/OBS convenience aliases.
-    window.logEvent = logEvent;
+    // Drain anything captured before we were listening (parse-time errors),
+    // THEN subscribe — draining first avoids double-rendering the same event.
+    if (window.overlayLogDrain) window.overlayLogDrain().forEach(renderLogEvent);
+    window.addEventListener("overlay:log", (e) => renderLogEvent(e.detail || {}));
 
     // ─── Dev: manual presence trigger (safe to delete before release) ─────
     // From the OBS source / browser console:
@@ -605,11 +493,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // ─── WebSocket Connection ─────────────────────────────────────────────
+    // Slow, quiet auto-retry: on a drop we reconnect every RETRY_MS (logging is
+    // deduped by the WebSocket wrapper above, so no spam). An "overlay:retry"
+    // event — fired by the Stream Deck OSC button via jte_control.js — forces an
+    // immediate reconnect of whatever's currently down.
+    const RETRY_MS = 30000;
+
+    let twitchWs    = null;
+    let twitchTimer = null;
 
     function connect() {
+        clearTimeout(twitchTimer);
         const ws = new WebSocket("wss://irc-ws.chat.twitch.tv");
+        twitchWs = ws;
 
         ws.onopen = () => {
+            console.log("Twitch chat connected.");
             selfNick = `justinfan${Math.floor(Math.random() * 99999)}`;
             joinGraceUntil = Date.now() + JOIN_GRACE_MS;  // re-armed each connect
             ws.send("CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership");
@@ -641,14 +540,16 @@ document.addEventListener("DOMContentLoaded", () => {
         };
 
         ws.onclose = () => {
-            console.warn("Twitch IRC disconnected. Reconnecting in 5 seconds…");
-            setTimeout(connect, 5000);
+            twitchTimer = setTimeout(connect, RETRY_MS);
         };
 
-        ws.onerror = (err) => {
-            console.error("WebSocket error:", err);
-            ws.close();
-        };
+        ws.onerror = () => ws.close();
+    }
+
+    function retryTwitch() {
+        const s = twitchWs && twitchWs.readyState;
+        if (s === WebSocket.OPEN || s === WebSocket.CONNECTING) return;
+        connect();
     }
 
     let BADGE_CACHE = {};
@@ -669,38 +570,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     init();
 
-    let ytReconnectDelay = 5000;
+    // YouTube chat now rides the shared bus: the OverlayHub's youtube subsystem
+    // waits for the stream, attaches pytchat, and broadcasts each normalized
+    // message as {type:"chat"}, which jte_control.js relays here as an
+    // "overlay:chat" event. No direct socket to fail on launch anymore.
+    window.addEventListener("overlay:chat", (e) => {
+        if (e.detail) addMessage(e.detail);
+    });
 
-    function connectYouTubeRelay() {
-        const ws = new WebSocket("ws://localhost:7898");
-
-        ws.onopen = () => {
-            console.log("YouTube relay connected.");
-            ytReconnectDelay = 5000;
-        };
-
-        ws.onmessage = (event) => {
-            try {
-                addMessage(JSON.parse(event.data));
-            } catch (e) {
-                console.error("Bad YouTube relay payload.");
-                console.warn(e);
-            }
-        };
-
-        ws.onclose = () => {
-            setTimeout(connectYouTubeRelay, ytReconnectDelay);
-            ytReconnectDelay = Math.min(ytReconnectDelay * 1.5, 60000);
-        };
-
-        // The browser logs "WebSocket connection ... failed" itself, but that
-        // raw line can't be intercepted — so surface our own overlay notice
-        // here, where we actually have the event.
-        ws.onerror = () => {
-            console.warn(`YouTube relay unavailable. Retrying in ${Math.round(ytReconnectDelay / 1000)} seconds...`);
-            ws.close();
-        };
-    }
-
-    connectYouTubeRelay();
+    // Stream Deck OSC button → jte_control.js → "overlay:retry": reconnect
+    // Twitch IRC if it's currently down (YouTube reconnection is the hub's job).
+    window.addEventListener("overlay:retry", retryTwitch);
 });

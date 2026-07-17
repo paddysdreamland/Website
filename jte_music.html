@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>JtE – Stream Overlay</title>
+        <link rel="stylesheet" href="styles/jte_widgets.css">
+        <link rel="stylesheet" href="styles/obs_scenecards.css">
+        <link rel="stylesheet" href="styles/pd_main.css">
+
+        <!-- jte_log.js first: it patches console/fetch/WebSocket at parse time,
+             before any other script opens a socket. jte_control.js second: it
+             defines overlayPublish(), which jte_log.js ships logs through. -->
+        <script src="scripts/jte_log.js"></script>
+        <script src="scripts/jte_control.js"></script>
+
+        <script src="scripts/jte_music.js"></script>
+
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+
+    <body style="background-color: rgb(32, 32, 32)">
+        <div id="toast-anchor" class="wrapper-tl">
+            <div class="toast-wrapper hide">
+                <div id="toast-album-image-bg" class="toast-album-image-bg"></div>
+                <div id="toast-album-image" class="toast-album-image"></div>                
+
+                <div class="toast-info-wrapper">
+                    <div class="toast-info-top">
+                        <div id="toast-now-playing"></div>
+                    </div>
+
+                    <div class="toast-info-center">
+                        <div id="toast-title"></div>
+                        <div id="toast-artist"></div>
+                    </div>
+
+                    <div class="toast-info-bottom">
+                        <div id="toast-album"></div>
+                        <div id="toast-length"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>

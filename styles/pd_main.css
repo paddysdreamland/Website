@@ -1324,6 +1324,18 @@ li > a {
   justify-content: space-between;
 }
 
+.column-4 {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.row-4 {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+}
+
 .column-5 {
   display: flex;
   flex-direction: column;
@@ -1642,4 +1654,48 @@ li > a {
 
 @media screen and (max-width: 500px) {
 
+}
+
+
+
+
+.activity-icon {
+    background-image: url("../ui/texturemappings/activityiconwin32.png");
+    /* Image stays at its natural 512x256 so one 64px frame == this 64px box,
+       which is what the percentage-position math below assumes. */
+    background-repeat: no-repeat;
+    /* UV->% divisors: 1 - frameUVsize. Frame is 0.125 wide, 0.25 tall. */
+    --uv-x: 0.875; /* 1 - 0.125 */
+    --uv-y: 0.75;  /* 1 - 0.25  */
+    width: 64px; height: 64px;
+    position: fixed; right: 96px; top: 64px;
+
+    /* 21 frames @ 30fps = 0.7s */
+    animation: activity-icon-anim 0.7s steps(1, end) infinite;
+}
+
+/* Each X/Y is the raw <MinUv> from ActivityIcon.xml, mapped into CSS percentage
+   space as: MinUv / (1 - frameUVsize) * 100%. Frames spaced at i*(100/21)%. */
+@keyframes activity-icon-anim {
+    0%      { background-position: calc(0.8261719   / var(--uv-x) * 100%) calc(0.5585938   / var(--uv-y) * 100%); } /* frame 0  */
+    4.762%  { background-position: calc(0.8261719   / var(--uv-x) * 100%) calc(0.2851563   / var(--uv-y) * 100%); } /* frame 1  */
+    9.524%  { background-position: calc(0.8261719   / var(--uv-x) * 100%) calc(0.01171875  / var(--uv-y) * 100%); } /* frame 2  */
+    14.286% { background-position: calc(0.6894531   / var(--uv-x) * 100%) calc(0.5585938   / var(--uv-y) * 100%); } /* frame 3  */
+    19.048% { background-position: calc(0.6894531   / var(--uv-x) * 100%) calc(0.2851563   / var(--uv-y) * 100%); } /* frame 4  */
+    23.810% { background-position: calc(0.6894531   / var(--uv-x) * 100%) calc(0.01171875  / var(--uv-y) * 100%); } /* frame 5  */
+    28.571% { background-position: calc(0.5527344   / var(--uv-x) * 100%) calc(0.5585938   / var(--uv-y) * 100%); } /* frame 6  */
+    33.333% { background-position: calc(0.5527344   / var(--uv-x) * 100%) calc(0.2851563   / var(--uv-y) * 100%); } /* frame 7  */
+    38.095% { background-position: calc(0.5527344   / var(--uv-x) * 100%) calc(0.01171875  / var(--uv-y) * 100%); } /* frame 8  */
+    42.857% { background-position: calc(0.4160156   / var(--uv-x) * 100%) calc(0.5585938   / var(--uv-y) * 100%); } /* frame 9  */
+    47.619% { background-position: calc(0.4160156   / var(--uv-x) * 100%) calc(0.2851563   / var(--uv-y) * 100%); } /* frame 10 */
+    52.381% { background-position: calc(0.2792969   / var(--uv-x) * 100%) calc(0.5585938   / var(--uv-y) * 100%); } /* frame 11 */
+    57.143% { background-position: calc(0.4160156   / var(--uv-x) * 100%) calc(0.01171875  / var(--uv-y) * 100%); } /* frame 12 */
+    61.905% { background-position: calc(0.1425781   / var(--uv-x) * 100%) calc(0.5585938   / var(--uv-y) * 100%); } /* frame 13 */
+    66.667% { background-position: calc(0.2792969   / var(--uv-x) * 100%) calc(0.2851563   / var(--uv-y) * 100%); } /* frame 14 */
+    71.429% { background-position: calc(0.005859375 / var(--uv-x) * 100%) calc(0.5585938   / var(--uv-y) * 100%); } /* frame 15 */
+    76.190% { background-position: calc(0.2792969   / var(--uv-x) * 100%) calc(0.01171875  / var(--uv-y) * 100%); } /* frame 16 */
+    80.952% { background-position: calc(0.1425781   / var(--uv-x) * 100%) calc(0.2851563   / var(--uv-y) * 100%); } /* frame 17 */
+    85.714% { background-position: calc(0.005859375 / var(--uv-x) * 100%) calc(0.2851563   / var(--uv-y) * 100%); } /* frame 18 */
+    90.476% { background-position: calc(0.1425781   / var(--uv-x) * 100%) calc(0.01171875  / var(--uv-y) * 100%); } /* frame 19 */
+    95.238% { background-position: calc(0.005859375 / var(--uv-x) * 100%) calc(0.01171875  / var(--uv-y) * 100%); } /* frame 20 */
 }

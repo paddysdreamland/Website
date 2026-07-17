@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>JtE – Stream Overlay</title>
+        <link rel="stylesheet" href="styles/jte_widgets.css">
+        <link rel="stylesheet" href="styles/obs_scenecards.css">
+        <link rel="stylesheet" href="styles/pd_main.css">
+
+        <!-- jte_log.js first: it patches console/fetch/WebSocket at parse time,
+             before any other script opens a socket. jte_control.js second: it
+             defines overlayPublish(), which jte_log.js ships logs through. -->
+        <script src="scripts/jte_log.js"></script>
+        <script src="scripts/jte_control.js"></script>
+
+        <script src="scripts/jte_stats.js"></script>
+        <script src="scripts/jte_heartrate.js"></script>
+        <script src="scripts/jte_note.js"></script>
+
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+
+    <body style="background-color: rgb(32, 32, 32)">
+        <div id="misc-anchor" class="wrapper-br">
+            <div class="row-4">
+                <div id="heart-rate-wrapper" class="misc-wrapper heart-rate">
+                    <div id="heart-rate" class="misc-text heart-rate">N/A</div>
+                    <div class="misc-icon"></div>
+                </div>
+
+                <div class="misc-wrapper viewers">
+                    <div id="viewer-count" class="misc-text">N/A</div>
+                    <div class="misc-icon"></div>
+                </div>
+
+                <div class="misc-wrapper followers">
+                    <div id="follower-count" class="misc-text">N/A</div>
+                    <div class="misc-icon"></div>
+                </div>
+
+                <div class="misc-wrapper flags">
+                    <div class="misc-flag-wrapper row-4">
+                        <div class="misc-flag transpan"></div>
+                    </div>
+
+                    <div class="misc-icon"></div>
+                </div>
+            </div>
+
+            <div>
+                <div id="note-wrapper" class="msg-wrapper-inverted log-event log-notice">
+                    <div id="note-message" class="msg-content">N/A</div>
+                    <div class="msg-icon-inverted"></div>
+                </div>
+            </div>
+        </div>
+    </body>
+</html>
