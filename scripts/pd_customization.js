@@ -13,9 +13,9 @@ function applyColor() {
 
 // Function to reset color to default
 function resetColor() {
-    document.getElementById('website-color-r').value = 64;
-    document.getElementById('website-color-g').value = 192;
-    document.getElementById('website-color-b').value = 128;
+    document.getElementById('website-color-r').value = 0;
+    document.getElementById('website-color-g').value = 255;
+    document.getElementById('website-color-b').value = 192;
 
     applyColor(); // Reapply default color
     localStorage.removeItem('customColor'); // Clear from localStorage

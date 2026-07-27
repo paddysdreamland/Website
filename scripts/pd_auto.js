@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", function () {
     
     //---
 
-    /*const sections = document.querySelectorAll('section');
+    const sections = document.querySelectorAll('section');
     sections.forEach(section => {
         const sectionEndHolder = document.createElement('div');
         sectionEndHolder.className = 'section-end-holder';
@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", function () {
         <div class="silk-error"></div>
         `;
         section.appendChild(sectionEndHolder);
-    });*/
+    });
 
     //---
 

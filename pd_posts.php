@@ -1,9 +1,6 @@
 <?php
 declare(strict_types=1);
 
-// pd_posts.php  —  returns the published news posts as JSON for pd_post_manager.js.
-// Newest first, hidden posts excluded. Mirrors the DB setup used by auth/me.php.
-
 $config = require dirname(__DIR__) . '/private/pd_config.php';
 require dirname(__DIR__) . '/private/pd_lib.php';
 

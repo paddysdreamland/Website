@@ -23,6 +23,7 @@ Beyond being a simple website:
 - can be installed as an app using supported browsers
 - stores HTML-based Twitch widgets
 - includes an unused Garry’s Mod HUD experiment
+- and other junk
 
 # License
 
