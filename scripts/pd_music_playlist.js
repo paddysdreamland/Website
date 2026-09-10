@@ -1,4 +1,28 @@
 var music = {
+    Experiments: {
+        E3: {
+            ME_Music_Release_Chase_1_8CH_160BPM: {
+                layer1: "ME_Sound/Music/E3/ME_Music_Release_Chase_1_8CH_160BPM/Layer 1.mp3",
+                layer2: "ME_Sound/Music/E3/ME_Music_Release_Chase_1_8CH_160BPM/Layer 2.mp3",
+                layer3: "ME_Sound/Music/E3/ME_Music_Release_Chase_1_8CH_160BPM/Layer 3.mp3",
+                layer4: "ME_Sound/Music/E3/ME_Music_Release_Chase_1_8CH_160BPM/Layer 4.mp3",
+                layer5: "ME_Sound/Music/E3/ME_Music_Release_Chase_1_8CH_160BPM/Layer 5.mp3",
+                layer6: "ME_Sound/Music/E3/ME_Music_Release_Chase_1_8CH_160BPM/Layer 6.mp3",
+                layer7: "ME_Sound/Music/E3/ME_Music_Release_Chase_1_8CH_160BPM/Layer 7.mp3",
+                layer8: "ME_Sound/Music/E3/ME_Music_Release_Chase_1_8CH_160BPM/Layer 8.mp3",
+            },
+            ME_Music_Shard_Combat_1_8CH_115BPM: {
+                layer1: "ME_Sound/Music/E3/ME_Music_Shard_Combat_1_8CH_115BPM/Layer 1.mp3",
+                layer2: "ME_Sound/Music/E3/ME_Music_Shard_Combat_1_8CH_115BPM/Layer 2.mp3",
+                layer3: "ME_Sound/Music/E3/ME_Music_Shard_Combat_1_8CH_115BPM/Layer 3.mp3",
+                layer4: "ME_Sound/Music/E3/ME_Music_Shard_Combat_1_8CH_115BPM/Layer 4.mp3",
+                layer5: "ME_Sound/Music/E3/ME_Music_Shard_Combat_1_8CH_115BPM/Layer 5.mp3",
+                layer6: "ME_Sound/Music/E3/ME_Music_Shard_Combat_1_8CH_115BPM/Layer 6.mp3",
+                layer7: "ME_Sound/Music/E3/ME_Music_Shard_Combat_1_8CH_115BPM/Layer 7.mp3",
+                layer8: "ME_Sound/Music/E3/ME_Music_Shard_Combat_1_8CH_115BPM/Layer 8.mp3",
+            }
+        }
+    },
     Districts: {
         Anchor: {
             ME_Music_AlertState_Anchor_8CH_138BPM: {

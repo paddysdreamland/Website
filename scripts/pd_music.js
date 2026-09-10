@@ -63,9 +63,19 @@ async function loadAudio(url) {
     return await audioContext.decodeAudioData(arrayBuffer);
 }
 
-function populateTrackSelector() {
-    const missionNames = ["BackInTheGame", "Benefactor", "Family", "Flytrap", "Gridnodes", "Kingdom", "PrisonerX", "Release", "Sanctuary", "Savant", "Shard", "TopOfTheWorld", "Vive"];
+// What a group inside each top-level category of `music` is called in the selector headers.
+// Categories not listed here fall back to their own name with a trailing "s" trimmed.
+const categoryGroupLabels = {
+    Districts: "District",
+    Missions: "Mission",
+    Experiments: "Experimental"
+};
 
+function groupLabelForCategory(category) {
+    return categoryGroupLabels[category] || category.replace(/s$/, "");
+}
+
+function populateTrackSelector() {
     const layerSelectors = [
         document.getElementById("layers-selector1"),
         document.getElementById("layers-selector2"),
@@ -74,8 +84,9 @@ function populateTrackSelector() {
     ];
 
     for (const category in music) {
+        const groupLabel = groupLabelForCategory(category);
+
         for (const district in music[category]) {
-            const groupLabel = missionNames.includes(district) ? "Mission" : "District";
             const titleOption = document.createElement("option");
             titleOption.text = `${groupLabel}: ${district}`;
             titleOption.disabled = true;
