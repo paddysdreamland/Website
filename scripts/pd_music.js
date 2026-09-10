@@ -191,6 +191,19 @@ function nearestOctaveTempo(mixTempo, nativeBPM) {
     return mixTempo * Math.pow(2, k);
 }
 
+// The exact musical length of a decoded loop, in seconds. MP3 decoding leaves the encoder's delay
+// and padding on the buffer, so its raw duration overshoots a whole number of beats by ~50-70ms
+// (e.g. 160.135 beats instead of 160). Rounding to the nearest beat count recovers the length the
+// music was actually written to, and trims that padding off the end of the loop.
+function musicalLoopLength(bufferDuration, bpm) {
+    if (!bpm || bufferDuration <= 0) return bufferDuration;
+    const beats = bufferDuration * bpm / 60;
+    if (beats < 1) return bufferDuration;
+    const loop = Math.round(beats) * 60 / bpm;
+    // Only ever trim: if the buffer is a touch short of the beat boundary, loop all of it.
+    return loop <= bufferDuration ? loop : bufferDuration;
+}
+
 // Loads all 8 layers for the given track (respecting per-layer selector overrides),
 // creates panned/looping sources started at volume 0, and returns the new node sets.
 // options:
@@ -231,10 +244,18 @@ async function loadTrackSources(trackKey, { targetTempo = null, sync = false } =
     const gains = [];
     const groupRates = [];
     const groupOffsets = [];
+    const groupLoops = [];
 
     layers.forEach((bufferPair, groupIndex) => {
         const groupBPM = groupBPMs[groupIndex];
         const groupDuration = bufferPair[0]?.duration || 0;
+
+        // Loop each group over its exact musical length. Looping the raw buffer instead replays the
+        // MP3 padding every pass, so a group slips ~50-70ms further off the beat grid each time
+        // round, and groups of differing length smear against each other until the mix is mush.
+        const groupLoop = musicalLoopLength(groupDuration, groupBPM);
+        const loopBeats = (groupBPM && groupLoop > 0) ? groupLoop * groupBPM / 60 : 0;
+        groupLoops.push(groupLoop);
 
         // Tempo-match to the nearest octave of the mix tempo (not the mix tempo itself), so a fast
         // layer plays near its own speed at double/quad time instead of being dragged way down.
@@ -245,12 +266,11 @@ async function loadTrackSources(trackKey, { targetTempo = null, sync = false } =
         // Beat-align each group's loop start to the running mix clock. The group runs at `octave`
         // times the grid's beat rate (its tempo is octave*mixTempo), so scale the beat phase by it.
         let groupOffset = 0;
-        if (sync && groupBPM && groupDuration > 0) {
-            const loopBeats = groupDuration * groupBPM / 60;
+        if (sync && groupBPM && loopBeats > 0) {
             const octave = mixTempo ? matchedTempo / mixTempo : 1;
             let phase = (currentBeats() * octave) % loopBeats;
             if (phase < 0) phase += loopBeats;
-            groupOffset = (phase * 60 / groupBPM) % groupDuration;
+            groupOffset = (phase * 60 / groupBPM) % groupLoop;
         }
         groupOffsets.push(groupOffset);
 
@@ -266,6 +286,10 @@ async function loadTrackSources(trackKey, { targetTempo = null, sync = false } =
             gainNode.gain.value = 0;
             source.connect(panner).connect(gainNode).connect(audioContext.destination);
             source.loop = true;
+            if (groupLoop > 0 && groupLoop <= buffer.duration) {
+                source.loopStart = 0;
+                source.loopEnd = groupLoop;
+            }
             source.start(startTime, groupOffset);
 
             sources.push(source);
@@ -273,7 +297,9 @@ async function loadTrackSources(trackKey, { targetTempo = null, sync = false } =
         });
     });
 
-    return { sources, gains, duration, startTime, startOffset: groupOffsets[0], rate: groupRates[0], nativeBPM, groupBPMs, groupRates };
+    // Report the audible loop period (group 0's musical length), which is what the fade timings and
+    // the dynamic-handling interval are measured against.
+    return { sources, gains, duration: groupLoops[0] || duration, startTime, startOffset: groupOffsets[0], rate: groupRates[0], nativeBPM, groupBPMs, groupRates };
 }
 
 // Fades each layer group toward its current muted state (0 if muted, 1 if active).
@@ -729,7 +755,7 @@ async function renderAndDownloadMultiChannelMix() {
     const activeLoops = [];
     groupBuffers.forEach((bufferPair, index) => {
         if (!document.getElementById(`starter-layer-checkbox${index + 1}`).checked) return;
-        const bufferDuration = bufferPair[0]?.duration || 0;
+        const bufferDuration = musicalLoopLength(bufferPair[0]?.duration || 0, groupBPMs[index]);
         if (bufferDuration <= 0) return;
         const loopSeconds = bufferDuration / (groupRates[index] || 1); // audible loop length at its play rate
         const beats = mixTempo ? Math.max(1, Math.round(loopSeconds * mixTempo / 60)) : null;
@@ -746,7 +772,7 @@ async function renderAndDownloadMultiChannelMix() {
     } else {
         // No tempo reference: fall back to the longest active loop (or the master group's loop).
         const longestActive = activeLoops.reduce((max, loop) => Math.max(max, loop.loopSeconds), 0);
-        renderDuration = longestActive || (groupBuffers[0][0]?.duration || 0) / (groupRates[0] || 1);
+        renderDuration = longestActive || musicalLoopLength(groupBuffers[0][0]?.duration || 0, groupBPMs[0]) / (groupRates[0] || 1);
     }
 
     if (renderDuration <= 0) {
@@ -767,6 +793,11 @@ async function renderAndDownloadMultiChannelMix() {
             source.buffer = buffer;
             source.playbackRate.value = groupRates[index]; // tempo-match, preserving the maintained BPM
             source.loop = true;                            // fill the whole render window
+            const bakedLoop = musicalLoopLength(buffer.duration, groupBPMs[index]);
+            if (bakedLoop > 0 && bakedLoop <= buffer.duration) {
+                source.loopStart = 0;                      // trim MP3 padding so repeats stay on the beat
+                source.loopEnd = bakedLoop;
+            }
             source.connect(merger, 0, (index * 2) + sub);
             source.start(0);
         });
