@@ -1,0 +1,81 @@
+:root {
+    --black: rgb(16, 16, 16);
+    --white: rgb(240, 240, 240);
+
+    /* Catalyst runner red, in the same comma-list form pd_main.css uses so it
+       can be dropped into rgba() with an alpha. */
+    --custom-color: 255, 40, 40;
+    --custom-border-radius: 0px;
+
+    --holder-background-color: rgba(255, 255, 255, 0.92);
+    --holder-border-color: rgba(16, 16, 16, 0.15);
+    --holder-border-thickness: 2px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--black);
+    font-family: "Lato", sans-serif;
+    color: var(--black);
+}
+
+#map-holder {
+    position: fixed;
+    inset: 0;
+}
+
+#map-holder canvas {
+    display: block;
+    cursor: crosshair;
+}
+
+/* Loading */
+#loading-holder {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    background: var(--white);
+    transition: opacity 0.4s ease;
+}
+
+#loading-holder.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* glg_ui.css pins the activity icon to the top-right of the viewport; inside
+   the loading panel it belongs in the flow with everything else. */
+#loading-holder .activity-icon {
+    position: relative;
+    right: auto;
+    top: auto;
+}
+
+#loading-label {
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: rgba(var(--custom-color), 1);
+}
+
+.version-date {
+    font-family: "Roboto";
+    font-weight: bold;
+    font-size: 16px;
+    color: black;
+    position: fixed; left: 8px; bottom: 8px;
+}
