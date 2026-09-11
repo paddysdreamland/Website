@@ -22,17 +22,17 @@
         <meta name="description" content="Game development and services.">
         <meta name="keywords" content="Development, Services, Gaming, Personal, Community">
         <meta name="author" content="Drawing Pad">
-        <meta name="theme-color" content="#5CC0A0">
+        <meta name="theme-color" content="#FF4040">
         <meta name="robots" content="index, follow">
 
-        <meta name="twitter:title" content="Paddy's Dreamland™ — 3D Map of Glass">
+        <meta name="twitter:title" content="Glassguessr">
         <meta name="twitter:description" content="A basic 3D map of Glass with a pointer. Made for the Beat Revival's #glassguessr channel.">
         <meta name="twitter:image" content="https://www.paddysdreamland.com/images/embeds/glg_banner1.png">
         <meta name="twitter:card" content="summary_large_image">
 
         <meta name="description" content="A digital sanctuary where you're allowed to exist without being judged, fixed, or misunderstood. Game development, music, streams, and a small creative community by Paddy.">
 
-        <meta property="og:title" content="Paddy's Dreamland™ — 3D Map of Glass">
+        <meta property="og:title" content="Glassguessr">
         <meta property="og:description" content="A basic 3D map of Glass with a pointer. Made for the Beat Revival's #glassguessr channel.">
         <meta property="og:image" content="https://www.paddysdreamland.com/images/embeds/glg_banner1.png">
         <meta property="og:site_name" content="Paddy's Dreamland™">
@@ -42,6 +42,16 @@
 
     <body>
         <div id="map-holder"></div>
+
+        <div id="controls-holder">
+            <div class="controls-title">Controls</div>
+
+            <div class="controls-row"><span class="controls-keys"><kbd>Drag</kbd></span><span>Pan</span></div>
+            <div class="controls-row"><span class="controls-keys"><kbd>Shift/Control</kbd><kbd>Drag</kbd></span><span>Orbit</span></div>
+            <div class="controls-row"><span class="controls-keys"><kbd>Mouse Wheel</kbd></span><span>Zoom</span></div>
+            <div class="controls-row"><span class="controls-keys"><kbd>&#8592;</kbd><kbd>&#8593;</kbd><kbd>&#8595;</kbd><kbd>&#8594;</kbd></span><span>Pan</span></div>
+            <div class="controls-row"><span class="controls-keys"><kbd>Click</kbd></span><span>Place marker</span></div>
+        </div>
 
         <div id="loading-holder">
             <div class="activity-icon"></div>
