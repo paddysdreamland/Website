@@ -73,10 +73,6 @@ html, body {
 }
 
 .version-date {
-    font-family: "Roboto";
-    font-weight: bold;
-    font-size: 16px;
-    color: black;
     position: fixed; left: 8px; bottom: 8px;
 }
 /* Fonts - the stacks above name Lato and Roboto but nothing ever declared
@@ -162,6 +158,10 @@ html, body {
     color: var(--black);
     background: rgba(16, 16, 16, 0.06);
     border: 1px solid var(--holder-border-color);
+}
+
+.ck-text {
+    color: grey;
 }
 
 @media (max-width: 600px) {
