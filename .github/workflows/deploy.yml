@@ -8,6 +8,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute version number
+        if: github.ref_name == 'Release'
+        run: |
+          VERSION="$(date +%y.%m)-$(git log --since="$(date +%Y-%m-01)" --oneline | wc -l)"
+          echo "Version: $VERSION"
+          printf '{"version":"%s"}' "$VERSION" > version.json
 
       - name: Deploy via FTP
         if: github.ref_name == 'Release'
