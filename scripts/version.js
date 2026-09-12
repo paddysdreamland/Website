@@ -1,4 +1,4 @@
-const CHANGELOG_ENTRY_LIMIT = 5;
+const CHANGELOG_ENTRY_LIMIT = 10;
 const CHANGELOG_MORE_URL = "https://github.com/paddysdreamland/Website/tree/Release";
 
 function escapeHtml(str) {
@@ -9,6 +9,52 @@ function escapeHtml(str) {
         '"': "&quot;",
         "'": "&#39;",
     }[c]));
+}
+
+function renderBody(body) {
+    const rawLines = body.split("\n");
+
+    let html = "";
+    let bulletBuffer = [];
+    let paragraphBuffer = [];
+
+    const flushBullets = () => {
+        if (bulletBuffer.length) {
+            html += `<ul class="changelog-bullets">${bulletBuffer.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`;
+            bulletBuffer = [];
+        }
+    };
+
+    const flushParagraph = () => {
+        if (paragraphBuffer.length) {
+            html += `<p class="changelog-text">${escapeHtml(paragraphBuffer.join(" "))}</p>`;
+            paragraphBuffer = [];
+        }
+    };
+
+    for (const rawLine of rawLines) {
+        const line = rawLine.trim();
+
+        if (!line) {
+            // A blank line ends whichever block (paragraph or bullet list) is currently open.
+            flushBullets();
+            flushParagraph();
+            continue;
+        }
+
+        const bulletMatch = line.match(/^[-*•]\s+(.*)/);
+        if (bulletMatch) {
+            flushParagraph();
+            bulletBuffer.push(bulletMatch[1]);
+        } else {
+            flushBullets();
+            paragraphBuffer.push(line);
+        }
+    }
+    flushBullets();
+    flushParagraph();
+
+    return html;
 }
 
 fetch("/version.json")
@@ -27,23 +73,13 @@ if (changelogEl) {
             const shown = entries.slice(0, CHANGELOG_ENTRY_LIMIT);
 
             const entriesHtml = shown.map((entry) => {
-                const bullets = entry.body
-                    .split("\n")
-                    .map((line) => line.trim())
-                    .filter((line) => /^[-*•]\s+/.test(line))
-                    .map((line) => line.replace(/^[-*•]\s+/, ""));
-
-                const list = bullets.length
-                    ? `<ul class="changelog-bullets">${bullets.map((b) => `<li>${escapeHtml(b)}</li>`).join("")}</ul>`
-                    : "";
-
                 return `<div class="changelog-entry">
                     <div class="changelog-entry-header">
                         <span class="changelog-version">${escapeHtml(entry.version)}</span>
                         <span class="changelog-date">${escapeHtml(entry.date)}</span>
                     </div>
                     <div class="changelog-subject">${escapeHtml(entry.subject)}</div>
-                    ${list}
+                    ${renderBody(entry.body)}
                 </div>`;
             }).join("");
 

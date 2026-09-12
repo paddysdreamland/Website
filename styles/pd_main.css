@@ -810,7 +810,8 @@ button {
     gap: 10px;
 }
 
-.lore-button {
+.lore-button,
+.changelog-more {
     background: linear-gradient(
         -90deg,
         rgba(var(--custom-color), 0.25),
@@ -829,7 +830,8 @@ button {
     padding-left: 5% !important;
 }
 
-.section-header {
+.section-header,
+.changelog-entry-header {
     background: linear-gradient(
         90deg,
         rgba(var(--custom-color), 0.25),
@@ -843,7 +845,9 @@ button {
     padding: 0 10px;
 }
 
-.section-paragraph {
+.section-paragraph,
+.changelog-subject,
+.changelog-text {
     font-family: "Lato";
     font-weight: 400;
     font-size: 16px;
@@ -852,7 +856,8 @@ button {
 }
 
 .section-list,
-.section-list-unspaced {
+.section-list-unspaced,
+.changelog-bullets {
     font-family: "Lato";
     font-size: 16px;
     text-align: justify;
@@ -862,7 +867,8 @@ button {
     gap: 10px;
 }
 
-.section-list-unspaced {
+.section-list-unspaced,
+.changelog-bullets {
     gap: 0px;
 }
 
@@ -894,7 +900,8 @@ li > a {
     transition: 0.1s;
 }
 
-.section-signature {
+.section-signature,
+.changelog-more {
     font-family: "Lato";
     font-weight: 900;
     font-size: 14px;
@@ -1473,7 +1480,8 @@ li > a {
 }
 
 /* Helpers */
-.spaced-out {
+.spaced-out,
+.changelog-entry-header {
     display: flex;
     justify-content: space-between;
 }
