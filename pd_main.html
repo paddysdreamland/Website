@@ -97,6 +97,7 @@
 
                     <div class="nav-misc-holder">
                         <button id="apps-button" class="nav-misc-button" style="background-image: url(images/silk/package.png);"></button>
+                        <button id="changelog-button" class="nav-misc-button" style="background-image: url(images/silk/layout_edit.png);"></button>
                         <button id="settings-button" class="nav-misc-button" style="background-image: url(images/silk/cog.png);"></button>
                     </div>
                 </div>
@@ -689,6 +690,12 @@
                             </div>
                         </div>
                     </section>
+
+                    <section id="changelog-section" style="display: none;">
+                        <div class="section-wrapper">
+                            <div id="git-version"></div>
+                        </div>
+                    </section>
     
                     <section id="settings-section" style="display: none;">
                         <div class="section-wrapper">
@@ -758,27 +765,11 @@
 
             <footer id="footer-holder">
                 <div class="footer-text-left">Made with love for the Dreamland community ♥</div>
-                <div id="last-update" class="footer-text-right">Last updated: N/A</div>
+                <div id="git-version" class="footer-text-right"></div>
                 <div class="footer-logo"></div>
             </footer>
-        </div>
-
-        <!-- This image viewer was a great concept but I never finished it. -->
-        <div id="iv-holder1" class="" style="display: none;">
-            <div id="iv-holder2">
-                <div class="iv-topbar">
-                    <div id="iv-close"></div>
-                </div>
-
-                <div class="iv-viewport"></div>
-
-                <div class="iv-nav1">
-                    <div class="iv-nav2">
-                        <div class="iv-nav-image"></div>
-                        <div class="iv-nav-image"></div>
-                    </div>
-                </div>
-            </div>
+            
+            <script src="./scripts/version.js"></script>
         </div>
 
         <div id="loading-holder">
