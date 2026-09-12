@@ -537,7 +537,7 @@ export function createMap(mount) {
 
                         /* Before the capture, so reflections see the extended
                            sea rather than its original edge. */
-                        oceanQuad = extendOcean();
+                        //oceanQuad = extendOcean();
                         captureEnvironment(pivot);
                         frameOn(pivot, START_DISTANCE);
                         resolve({
