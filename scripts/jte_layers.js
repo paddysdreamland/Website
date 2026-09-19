@@ -43,10 +43,6 @@ const LAYERS = {
     // - but "#layers=chat" is the recommended spelling for a plain scene, so it
     // has to be a layer the table knows about or every load warns about it.
     chat: {},
-
-    // Template. Uncomment once those elements exist, otherwise it warns on
-    // every load about the ones it cannot find.
-    //
     wallpaper: {
         "wallpaper-holder": "active",
     },
@@ -80,7 +76,9 @@ function applyLayers() {
     for (const [el, cls] of applied) el.classList.remove(cls);
     applied = [];
 
-    for (const name of activeLayers()) {
+    const active = activeLayers();
+
+    for (const name of active) {
         const def = LAYERS[name];
 
         // Warned rather than ignored: a typo in a scene's URL would otherwise
@@ -107,6 +105,12 @@ function applyLayers() {
             }
         }
     }
+
+    // Classes alone can't tell a layer to start or stop doing work - the
+    // slideshow has a timer that must not keep running for a wallpaper nobody
+    // is showing. Announced the same way jte_control.js relays the bus, so a
+    // layer with behaviour can listen instead of polling for its own class.
+    window.dispatchEvent(new CustomEvent("overlay:layers", { detail: { active } }));
 }
 
 // hashchange is the whole point - it fires without reloading. The initial call
