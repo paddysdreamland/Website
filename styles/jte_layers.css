@@ -1,0 +1,66 @@
+/* ─── Hash Layers ─────────────────────────────────────────────────────────
+   Styling for the optional layers scripts/jte_layers.js switches on from the
+   URL fragment. The elements live in the page; this file decides what they
+   look like when off and when on, and the script only adds the class.
+
+   Everything here is inert until a layer is active, so with no #layers= the
+   page looks exactly as it did before.
+
+   Kept in its own file rather than folded into jte_widgets.css so it can be
+   dropped from a page that has no layers, and so reverting the whole idea is
+   deleting two files and three lines of HTML.
+   ───────────────────────────────────────────────────────────────────────── */
+
+/* ─── Layer: wallpaper ──────────────────────────────────────────────────── */
+/* Example scaffolding. Harmless while #wallpaper-holder does not exist - the
+   selectors simply match nothing. */
+
+/* display:none rather than opacity/visibility, deliberately. A display:none
+   subtree is not rendered at all, so CSS animations stop and rAF stops firing
+   inside it. Hiding an animated wallpaper with opacity:0 would leave it
+   running and repainting in every scene, which on the s&box panel is a
+   full-texture upload every frame for something nobody can see. */
+#wallpaper-holder {
+    background-image: url(../images/slideshow/Document_00_Conglomerate.png);
+    background-position: center top;
+    background-size: 1920px 1080px;
+    width: 100%; height: 100%;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+
+    /* Purely decorative: clicks and hovers belong to whatever is above it.
+       Moot on the s&box panel, which sends no input at all, but it matters
+       anywhere this page is used with a cursor. */
+    pointer-events: none;
+    display: none;
+}
+
+#wallpaper-holder.active {
+    display: block;
+}
+
+#wallpaper-holder > * {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}
+
+/* Only applied while the wallpaper layer is on - see the LAYERS table. Lifts
+   the chat above the holder and gives the text something to stay readable
+   against, since it can no longer count on a plain dark background behind it.
+   .wrapper-bl is position:fixed with an automatic z-index, so paint order
+   would mostly handle this on its own; being explicit stops a future widget
+   with its own stacking from sliding in between. */
+.over-wallpaper {
+    z-index: 1;
+}
+
+.over-wallpaper .msg-content,
+.over-wallpaper .msg-author {
+    text-shadow:
+        0 1px 2px rgba(0, 0, 0, 0.9),
+        0 0 8px rgba(0, 0, 0, 0.6);
+}

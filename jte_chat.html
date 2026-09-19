@@ -5,8 +5,12 @@
         <link rel="stylesheet" href="styles/jte_widgets.css">
         <link rel="stylesheet" href="styles/obs_scenecards.css">
         <link rel="stylesheet" href="styles/pd_main.css">
+        <link rel="stylesheet" href="styles/jte_layers.css">
 
         <script src="scripts/jte_log.js"></script>
+        <!-- After jte_log.js so its warnings go through the console mirror and
+             reach the overlay as log cards. -->
+        <script src="scripts/jte_layers.js"></script>
         <script src="scripts/jte_control.js"></script>
 
         <script src="scripts/jte_twitch_chat.js"></script>
@@ -16,6 +20,7 @@
     </head>
 
     <body style="background-color: transparent">
+        <div id="wallpaper-holder"></div>
         <div id="chat-anchor" class="wrapper-bl fullscreen">
             <div id="chat-wrapper" class="chat-wrapper-reverse fullscreen">
                 <!-- Twitch and YouTube messages will appear here. -->
