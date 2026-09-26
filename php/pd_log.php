@@ -1,6 +1,6 @@
 <?php
 const PD_BOMB_ENABLED = true;
-define('PD_BOMB_FILE', dirname(__DIR__) . '/10G.gz');
+define('PD_BOMB_FILE', dirname(__DIR__, 2) . '/10G.gz');
 
 const PD_OFFSITE_FETCH = ['cross-site', 'same-site'];
 

@@ -30,6 +30,9 @@ document.addEventListener("DOMContentLoaded", function () {
         `Just imagine what it's like to be like me, live like me.`,
         `I can't remember anymore, maybe I buried the key?`,
         `Isn't it great to be exactly who you are?`,
+
+        // The Weeknd
+        `Scared? Don't worry, we'll be there to hold your hand.`,
     ];
 
     const subHour = new Date().getUTCHours();

@@ -89,7 +89,7 @@
                         <div class="nav-acc-button"><span id="visits">N/A</span></div>
 
                         <script>
-                            fetch('/pd_count.php').then(r => r.json()).then(data => {
+                            fetch('/php/pd_count.php').then(r => r.json()).then(data => {
                                 document.getElementById('visits').textContent = data.visits;
                             });
                         </script>

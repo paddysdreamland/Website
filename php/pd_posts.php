@@ -1,8 +1,8 @@
 <?php
 declare(strict_types=1);
 
-$config = require dirname(__DIR__) . '/private/pd_config.php';
-require dirname(__DIR__) . '/private/pd_lib.php';
+$config = require dirname(__DIR__, 2) . '/private/pd_config.php';
+require dirname(__DIR__, 2) . '/private/pd_lib.php';
 
 header('Content-Type: application/json');
 

@@ -57,7 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     let posts;
     try {
-        const response = await fetch("pd_posts.php");
+        const response = await fetch("/php/pd_posts.php");
         if (!response.ok) throw new Error(`Request failed: ${response.status}`);
         posts = await response.json();
     } catch (err) {
