@@ -1,10 +1,11 @@
 async function initDiscordHeader() {
   const loggedOut = document.getElementById('logged-out-wrapper');
   const loggedIn  = document.getElementById('logged-in-wrapper');
+  let data = { authenticated: false };
 
   try {
     const res = await fetch('/auth/me.php');        // same-origin: cookie rides along
-    const data = await res.json();
+    data = await res.json();
 
     if (data.authenticated) {
       document.getElementById('discord-display-name').textContent = data.user.displayName;
@@ -18,9 +19,14 @@ async function initDiscordHeader() {
     }
   } catch (e) {
     // network/parse failure — fall back to the logged-out view
+    data = { authenticated: false };
     loggedOut.style.display = '';
     loggedIn.style.display = 'none';
   }
+
+  // let other scripts (e.g. pd_manage.js) react to who's logged in
+  window.pdAuth = data;
+  document.dispatchEvent(new CustomEvent('pd:auth', { detail: data }));
 
   // wire the two buttons
   document.getElementById('discord-login')

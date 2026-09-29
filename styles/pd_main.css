@@ -1565,6 +1565,118 @@ li > a {
     padding: 5px 10px;
 }
 
+/* Management */
+.pm-status {
+    background-color: rgba(var(--custom-color), 0.125);
+    font-family: "Lato";
+    font-size: 14px;
+    padding: 5px 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.pm-status-error {
+    color: rgb(255, 128, 128);
+    background-color: rgba(255, 128, 128, 0.125);
+} .pm-status-error > span {
+    color: rgb(255, 128, 128);
+}
+
+.pm-list {
+    margin-top: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.pm-row {
+    background-color: rgba(255, 255, 255, 0.0625);
+    padding: 4px 4px 4px 10px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pm-row-date {
+    font-family: "Lato";
+    font-size: 12px;
+    opacity: 0.75;
+    flex: 0 0 auto;
+}
+
+.pm-row-title {
+    font-family: "Lato";
+    font-weight: 600;
+    font-size: 14px;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pm-badge {
+    background-color: rgba(255, 255, 255, 0.125);
+    font-family: "Lato";
+    font-weight: 700;
+    font-size: 11px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    flex: 0 0 auto;
+}
+
+.pm-badge-hidden {
+    color: rgb(255, 192, 128);
+    background-color: rgba(255, 192, 128, 0.125);
+}
+
+.pm-field-row {
+    display: flex;
+    gap: 10px;
+} .pm-field-row > * {
+    flex: 1 1 0;
+    min-width: 0;
+}
+
+.pm-input {
+    width: 100%;
+    margin-top: 5px;
+    font-family: "Lato";
+    font-size: 14px;
+    color-scheme: dark;
+    user-select: text;
+}
+
+.pm-input:disabled {
+    opacity: 0.5;
+}
+
+.pm-textarea {
+    min-height: 72px;
+    resize: vertical;
+}
+
+.pm-block {
+    background-color: rgba(255, 255, 255, 0.0625);
+    padding: 5px 10px 10px 10px;
+    border-radius: 4px;
+}
+
+.pm-block-button {
+    font-size: 10px;
+    padding: 2px 8px;
+} .pm-block-button:disabled {
+    opacity: 0.25;
+}
+
+.pm-add-row {
+    margin-top: 5px;
+}
+
 /* Error */
 .error-holder {
     width: auto;
@@ -1808,6 +1920,11 @@ li > a {
 }
 
 @media screen and (max-width: 600px) {
+    .pm-field-row {
+        flex-direction: column;
+        gap: 0px;
+    }
+
     .characters-wrapper {
         flex-direction: column;
     }

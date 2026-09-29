@@ -26,4 +26,7 @@ echo json_encode([
         'displayName' => $user['global_name'] ?: $user['username'],
         'avatarUrl'   => pd_avatar_url($user['discord_id'], $user['avatar_hash']),
     ],
+    // For showing/hiding UI only — every privileged endpoint re-checks on the server.
+    'permissions' => pd_user_permissions($user),
+    'rolesStale'  => !$user['roles_fresh'],
 ]);

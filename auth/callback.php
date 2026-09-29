@@ -48,22 +48,31 @@ if (empty($me['id'])) {
     exit('Could not read your Discord profile.');
 }
 
+// 4b) While we still hold the token, snapshot which PD server roles they have.
+//     This is the only chance: the token is discarded after this request.
+//     null = Discord couldn't be asked; store no roles and leave them marked stale.
+$siteRoles = pd_fetch_site_roles($token['access_token']);
+
 // 5) Insert or update the user record (keyed on the stable Discord ID).
 $pdo = pd_db($config);
 $stmt = $pdo->prepare(
-    'INSERT INTO pd_users (discord_id, username, global_name, avatar_hash, last_login_at)
-          VALUES (:id, :username, :global_name, :avatar, NOW())
+    'INSERT INTO pd_users (discord_id, username, global_name, avatar_hash, site_roles, roles_checked_at, last_login_at)
+          VALUES (:id, :username, :global_name, :avatar, :roles, IF(:checked, NOW(), NULL), NOW())
      ON DUPLICATE KEY UPDATE
-          username      = VALUES(username),
-          global_name   = VALUES(global_name),
-          avatar_hash   = VALUES(avatar_hash),
-          last_login_at = NOW()'
+          username         = VALUES(username),
+          global_name      = VALUES(global_name),
+          avatar_hash      = VALUES(avatar_hash),
+          site_roles       = VALUES(site_roles),
+          roles_checked_at = VALUES(roles_checked_at),
+          last_login_at    = NOW()'
 );
 $stmt->execute([
     ':id'          => $me['id'],
     ':username'    => $me['username'] ?? '',
     ':global_name' => $me['global_name'] ?? null,
     ':avatar'      => $me['avatar'] ?? null,
+    ':roles'       => $siteRoles ?? '',
+    ':checked'     => $siteRoles === null ? 0 : 1,
 ]);
 
 // 6) Create OUR session: store only the hash, hand the raw token to the cookie.

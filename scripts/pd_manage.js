@@ -1,0 +1,374 @@
+/* Management */
+
+// Everything in here is cosmetic: it only decides what to show. The server
+// re-checks the user's Discord roles on every request (see php/pd_posts_admin.php).
+
+// Extensionless on purpose: .htaccess 301s "*.php", and a redirected POST arrives as a GET.
+const PM_API = "/php/pd_posts_admin";
+
+const PM_BLOCK_LABELS = {
+    paragraph: "Paragraph",
+    bulletList: "Bullet List (one item per line)",
+    audio: "Audio (.mp3 path on this site)"
+};
+
+const pm = {
+    permissions: [],
+    displayName: "",
+    posts: [],
+    draft: null,      // the post being edited, in the editor/API shape
+    isNew: false,
+    keyTouched: false // stop auto-generating the key once it's been typed in
+};
+
+function pmCan(permission) {
+    return pm.permissions.includes(permission);
+}
+
+function pmEl(tag, className, text) {
+    const el = document.createElement(tag);
+    if (className) el.className = className;
+    if (text !== undefined) el.textContent = text;
+    return el;
+}
+
+/* Auth */
+
+function pmOnAuth(data) {
+    pm.permissions = (data && data.authenticated && data.permissions) || [];
+    pm.displayName = (data && data.user && data.user.displayName) || "";
+
+    const canManage = pmCan("news.manage");
+    document.getElementById("manage-holder").style.display = canManage ? "" : "none";
+
+    if (!canManage) {
+        // Don't leave someone parked on an empty tool (e.g. restored from lastVisitedSection).
+        const onManagePage = ["manage-section", "newsmanager-section"]
+            .some(id => document.getElementById(id).style.display === "block");
+        if (onManagePage) openSection("home");
+        return;
+    }
+
+    pmLoadPosts();
+}
+
+/* API */
+
+async function pmApi(body) {
+    const options = body === undefined
+        ? { headers: { "Accept": "application/json" } }
+        : {
+            method: "POST",
+            headers: { "Accept": "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+        };
+
+    const res = await fetch(PM_API, options);
+    let data = null;
+    try {
+        data = await res.json();
+    } catch (e) {
+        // non-JSON (e.g. a PHP fatal) — handled below
+    }
+
+    if (!res.ok || !data || data.ok === false) {
+        const err = new Error((data && data.message) || `Request failed (${res.status}).`);
+        err.code = data && data.error;
+        throw err;
+    }
+    return data;
+}
+
+/* Status */
+
+function pmStatus(message, kind) {
+    const status = document.getElementById("pm-status");
+    status.replaceChildren();
+
+    if (!message) {
+        status.style.display = "none";
+        return;
+    }
+
+    status.className = kind === "error" ? "pm-status pm-status-error" : "pm-status";
+    status.append(pmEl("span", "", message));
+    status.style.display = "";
+}
+
+function pmError(err) {
+    pmStatus(err.message, "error");
+
+    if (err.code === "reauth_required") {
+        // Logging in again re-reads their roles; prompt=none makes it a quick bounce.
+        const button = pmEl("button", "setting-button pm-status-action", "Re-verify");
+        button.addEventListener("click", () => { window.location.href = "/auth/login.php"; });
+        document.getElementById("pm-status").append(button);
+    }
+}
+
+/* Post List */
+
+async function pmLoadPosts() {
+    try {
+        const data = await pmApi();
+        pm.posts = data.posts;
+        pmRenderList();
+    } catch (err) {
+        pmError(err);
+    }
+}
+
+function pmRenderList() {
+    const list = document.getElementById("pm-list");
+    list.replaceChildren();
+
+    if (pm.posts.length === 0) {
+        list.append(pmEl("div", "setting-label-small", "No posts yet."));
+        return;
+    }
+
+    pm.posts.forEach(post => {
+        const row = pmEl("div", "pm-row");
+        row.append(pmEl("div", "pm-row-date", post.postDate));
+        row.append(pmEl("div", "pm-row-title", post.postHeader));
+
+        if (post.hidden) row.append(pmEl("div", "pm-badge pm-badge-hidden", "Hidden"));
+        if (post.irrelevant) row.append(pmEl("div", "pm-badge", "Outdated"));
+
+        const edit = pmEl("button", "setting-button", "Edit");
+        edit.addEventListener("click", () => pmOpenEditor(post));
+        row.append(edit);
+
+        list.append(row);
+    });
+}
+
+/* Editor */
+
+function pmToday() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function pmSlug(date, header) {
+    const slug = header.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    return `${date}-${slug}`.slice(0, 64).replace(/-+$/, "");
+}
+
+// "2026-01-03" -> "3rd of January 2026", matching what pd_posts.php sends the public page.
+function pmFormatDate(value) {
+    const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value || "");
+    if (!match) return value || "";
+
+    const day = Number(match[3]);
+    const suffix = (day % 100 >= 11 && day % 100 <= 13) ? "th" : ({ 1: "st", 2: "nd", 3: "rd" }[day % 10] || "th");
+    const month = new Date(Number(match[1]), Number(match[2]) - 1, 1).toLocaleString("en-GB", { month: "long" });
+    return `${day}${suffix} of ${month} ${match[1]}`;
+}
+
+function pmOpenEditor(post) {
+    pm.isNew = !post;
+    pm.keyTouched = !pm.isNew;
+    pm.draft = post
+        ? JSON.parse(JSON.stringify(post))
+        : {
+            postKey: "",
+            postHeader: "",
+            postDate: pmToday(),
+            postSignature: pm.displayName,
+            irrelevant: false,
+            hidden: true, // new posts start as drafts
+            postBody: [{ type: "paragraph", content: "" }]
+        };
+
+    document.getElementById("pm-editor-title").textContent = pm.isNew ? "New Post" : "Edit Post";
+    document.getElementById("pm-header").value = pm.draft.postHeader;
+    document.getElementById("pm-date").value = pm.draft.postDate;
+    document.getElementById("pm-signature").value = pm.draft.postSignature;
+    document.getElementById("pm-key").value = pm.draft.postKey;
+    document.getElementById("pm-key").disabled = !pm.isNew; // the key identifies the post, so it's fixed once created
+    document.getElementById("pm-hidden").checked = pm.draft.hidden;
+    document.getElementById("pm-irrelevant").checked = pm.draft.irrelevant;
+    document.getElementById("pm-delete").style.display = (!pm.isNew && pmCan("news.delete")) ? "" : "none";
+
+    pmRenderBlocks();
+    pmRenderPreview();
+    pmStatus("");
+
+    const editor = document.getElementById("pm-editor");
+    editor.style.display = "";
+    editor.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function pmCloseEditor() {
+    pm.draft = null;
+    document.getElementById("pm-editor").style.display = "none";
+}
+
+function pmSyncKey() {
+    if (pm.isNew && !pm.keyTouched) {
+        pm.draft.postKey = pmSlug(pm.draft.postDate, pm.draft.postHeader);
+        document.getElementById("pm-key").value = pm.draft.postKey;
+    }
+}
+
+function pmRenderBlocks() {
+    const holder = document.getElementById("pm-blocks");
+    holder.replaceChildren();
+
+    pm.draft.postBody.forEach((block, index) => {
+        const wrapper = pmEl("div", "pm-block");
+
+        const head = pmEl("div", "spaced-out");
+        head.append(pmEl("div", "setting-label-small", PM_BLOCK_LABELS[block.type] || block.type));
+
+        const actions = pmEl("div", "row-4");
+        [["▲", -1, "Move up"], ["▼", 1, "Move down"]].forEach(([label, offset, title]) => {
+            const button = pmEl("button", "setting-button pm-block-button", label);
+            button.title = title;
+            button.disabled = !pm.draft.postBody[index + offset];
+            button.addEventListener("click", () => {
+                const body = pm.draft.postBody;
+                [body[index], body[index + offset]] = [body[index + offset], body[index]];
+                pmRenderBlocks();
+                pmRenderPreview();
+            });
+            actions.append(button);
+        });
+
+        const remove = pmEl("button", "setting-button-danger pm-block-button", "✕");
+        remove.title = "Remove block";
+        remove.addEventListener("click", () => {
+            pm.draft.postBody.splice(index, 1);
+            pmRenderBlocks();
+            pmRenderPreview();
+        });
+        actions.append(remove);
+        head.append(actions);
+        wrapper.append(head);
+
+        let input;
+        if (block.type === "audio") {
+            input = pmEl("input", "input-field pm-input");
+            input.type = "text";
+            input.placeholder = "sounds/news/example.mp3";
+            input.value = block.src || "";
+            input.addEventListener("input", () => {
+                block.src = input.value.trim();
+                pmRenderPreview();
+            });
+        } else if (block.type === "bulletList") {
+            input = pmEl("textarea", "input-field pm-input pm-textarea");
+            input.value = (block.content || []).join("\n");
+            input.addEventListener("input", () => {
+                block.content = input.value.split("\n").filter(item => item.trim() !== "");
+                pmRenderPreview();
+            });
+        } else {
+            input = pmEl("textarea", "input-field pm-input pm-textarea");
+            input.value = block.content || "";
+            input.addEventListener("input", () => {
+                block.content = input.value;
+                pmRenderPreview();
+            });
+        }
+        wrapper.append(input);
+
+        holder.append(wrapper);
+    });
+}
+
+function pmAddBlock(type) {
+    pm.draft.postBody.push(
+        type === "audio" ? { type, src: "" }
+            : type === "bulletList" ? { type, content: [] }
+            : { type, content: "" }
+    );
+    pmRenderBlocks();
+    pmRenderPreview();
+}
+
+function pmRenderPreview() {
+    const holder = document.getElementById("pm-preview");
+    holder.replaceChildren();
+    if (!pm.draft) return;
+
+    // Same renderer as the public News page (pd_post_manager.js). Unsaved text is only
+    // rendered in your own browser; the server sanitizes it on save, and the editor
+    // reloads the stored version so you see exactly what visitors will.
+    holder.append(renderPost({ ...pm.draft, postDate: pmFormatDate(pm.draft.postDate) }));
+}
+
+async function pmSave() {
+    const save = document.getElementById("pm-save");
+    save.disabled = true;
+
+    try {
+        const data = await pmApi({ action: pm.isNew ? "create" : "update", post: pm.draft });
+        await pmLoadPosts();
+        pmOpenEditor(data.post);
+        pmStatus("Saved. Reload the page to see it on the News page.");
+    } catch (err) {
+        pmError(err);
+    } finally {
+        save.disabled = false;
+    }
+}
+
+async function pmDelete() {
+    if (!confirm(`Permanently delete "${pm.draft.postHeader}"? This cannot be undone. (Tick "Hidden" instead to just take it down.)`)) {
+        return;
+    }
+
+    try {
+        await pmApi({ action: "delete", postKey: pm.draft.postKey });
+        pmCloseEditor();
+        await pmLoadPosts();
+        pmStatus("Post deleted.");
+    } catch (err) {
+        pmError(err);
+    }
+}
+
+/* Init */
+
+document.addEventListener("DOMContentLoaded", function () {
+    document.getElementById("pm-new").addEventListener("click", () => pmOpenEditor(null));
+    document.getElementById("pm-cancel").addEventListener("click", pmCloseEditor);
+    document.getElementById("pm-save").addEventListener("click", pmSave);
+    document.getElementById("pm-delete").addEventListener("click", pmDelete);
+
+    ["paragraph", "bulletList", "audio"].forEach(type => {
+        document.getElementById(`pm-add-${type}`).addEventListener("click", () => pmAddBlock(type));
+    });
+
+    document.getElementById("pm-header").addEventListener("input", (e) => {
+        pm.draft.postHeader = e.target.value;
+        pmSyncKey();
+        pmRenderPreview();
+    });
+    document.getElementById("pm-date").addEventListener("input", (e) => {
+        pm.draft.postDate = e.target.value;
+        pmSyncKey();
+        pmRenderPreview();
+    });
+    document.getElementById("pm-signature").addEventListener("input", (e) => {
+        pm.draft.postSignature = e.target.value;
+        pmRenderPreview();
+    });
+    document.getElementById("pm-key").addEventListener("input", (e) => {
+        pm.keyTouched = true;
+        pm.draft.postKey = e.target.value.trim();
+    });
+    document.getElementById("pm-hidden").addEventListener("change", (e) => {
+        pm.draft.hidden = e.target.checked;
+    });
+    document.getElementById("pm-irrelevant").addEventListener("change", (e) => {
+        pm.draft.irrelevant = e.target.checked;
+        pmRenderPreview();
+    });
+
+    // pd_discordauth.js announces the login state; catch it even if it already fired.
+    if (window.pdAuth) pmOnAuth(window.pdAuth);
+    document.addEventListener("pd:auth", (e) => pmOnAuth(e.detail));
+});

@@ -21,6 +21,7 @@
         <script src="scripts/pd_music_playlist.js" defer></script>
 
         <script src="scripts/pd_post_manager.js" defer></script>
+        <script src="scripts/pd_manage.js" defer></script>
 
         <script src="scripts/pd_customization.js" defer></script>
         <script src="scripts/pd_discordauth.js"></script>
@@ -111,6 +112,10 @@
 
                     <div id="logged-in-wrapper" style="display: none;">
                         <div class="row-5">
+                            <div id="manage-holder" class="nav-acc-holder2" style="display: none;">
+                                <button id="manage-button" class="nav-misc-button" title="Management" style="background-image: url(images/silk/shield.png);"></button>
+                            </div>
+
                             <div class="nav-acc-holder2 row-0">
                                 <div id="discord-display-name">N/A</div>
                                 <div id="discord-profile-image"></div>
@@ -758,6 +763,127 @@
                                         <button id="discord-unlink" class="setting-button-danger">Unlink</button>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Management: only revealed by pd_manage.js for Founders & Managers; the server enforces it regardless. -->
+                    <section id="manage-section" style="display: none;">
+                        <div class="section-wrapper">
+                            <h3 class="main-header">Management</h3>
+
+                            <div class="section-container">
+                                <h4 class="section-header">Information</h4>
+
+                                <p class="section-paragraph">Tools for the Founder and Managers of Paddy's Dreamland. Access comes from your roles on the Discord server, which are re-checked whenever you log in.</p>
+
+                                <h4 class="section-header">Tools</h4>
+                            </div>
+
+                            <div class="app-buttons-wrapper">
+                                <button id="newsmanager-button" class="app-button-wrapper" title="Post Manager: Write, edit, and hide news posts without touching the database.">
+                                    <div class="app-icon-wrapper" style="background-image: url(images/header/dreamland1.png); background-size: cover; background-position: center;">
+                                        <div class="app-icon-image" style="background-image: url(images/silk/newspaper.png);"></div>
+                                    </div>
+
+                                    <div class="app-text-wrapper column-4">
+                                        <div class="app-title-wrapper">
+                                            <div class="app-title-text">Post Manager</div>
+                                        </div>
+
+                                        <div class="app-desc-wrapper">
+                                            <div class="app-desc-text">Write, edit, and hide news posts without touching the database.</div>
+                                        </div>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="newsmanager-section" style="display: none;">
+                        <div class="section-wrapper">
+                            <h3 class="main-header">Post Manager</h3>
+
+                            <div class="section-container">
+                                <div id="pm-status" class="pm-status" style="display: none;"></div>
+
+                                <div class="setting-container">
+                                    <div class="spaced-out">
+                                        <div class="setting-label">Posts</div>
+                                        <button id="pm-new" class="setting-button">New Post</button>
+                                    </div>
+                                    <div class="setting-label-small">Newest first. Hidden posts are only visible here.</div>
+                                    <div class="horizontal-break"></div>
+
+                                    <div id="pm-list" class="pm-list"></div>
+                                </div>
+                            </div>
+
+                            <div id="pm-editor" class="section-wrapper" style="display: none;">
+                                <h3 id="pm-editor-title" class="main-header">Editor</h3>
+
+                                <div class="section-container">
+                                    <div class="setting-container">
+                                        <div class="setting-label">Header</div>
+                                        <input id="pm-header" class="input-field pm-input" type="text" maxlength="255" placeholder="Slight Header Revamp + Loading Screen">
+                                    </div>
+
+                                    <div class="pm-field-row">
+                                        <div class="setting-container">
+                                            <div class="setting-label">Date</div>
+                                            <input id="pm-date" class="input-field pm-input" type="date">
+                                        </div>
+
+                                        <div class="setting-container">
+                                            <div class="setting-label">Signature</div>
+                                            <input id="pm-signature" class="input-field pm-input" type="text" maxlength="255" placeholder="Drawing Pad [Administrator]">
+                                        </div>
+
+                                        <div class="setting-container">
+                                            <div class="setting-label">Post Key</div>
+                                            <input id="pm-key" class="input-field pm-input" type="text" maxlength="64">
+                                        </div>
+                                    </div>
+
+                                    <div class="setting-container">
+                                        <div class="setting-label">Flags</div>
+                                        <div class="music-label-list">
+                                            <label class="music-label"><input id="pm-hidden" type="checkbox"> Hidden (draft)</label>
+                                            <label class="music-label"><input id="pm-irrelevant" type="checkbox"> Outdated</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="setting-container">
+                                        <div class="setting-label">Body</div>
+                                        <div class="setting-label-small">Text supports &lt;b&gt;, &lt;i&gt;, &lt;u&gt;, &lt;s&gt;, &lt;code&gt;, &lt;br&gt; and &lt;a href="…"&gt;. Anything else is stripped when saving.</div>
+                                        <div class="horizontal-break"></div>
+
+                                        <div id="pm-blocks" class="column-5"></div>
+
+                                        <div class="setting-input-holder pm-add-row">
+                                            <button id="pm-add-paragraph" class="setting-button">+ Paragraph</button>
+                                            <button id="pm-add-bulletList" class="setting-button">+ Bullet List</button>
+                                            <button id="pm-add-audio" class="setting-button">+ Audio</button>
+                                        </div>
+                                    </div>
+
+                                    <div class="horizontal-break"></div>
+
+                                    <div class="spaced-out">
+                                        <div>
+                                            <button id="pm-delete" class="setting-button-danger">Delete</button>
+                                        </div>
+
+                                        <div>
+                                            <button id="pm-cancel" class="setting-button">Cancel</button>
+                                            <button id="pm-save" class="setting-button">Save</button>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <h3 class="main-header">Preview</h3>
+
+                                <div id="pm-preview"></div>
                             </div>
                         </div>
                     </section>

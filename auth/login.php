@@ -31,7 +31,7 @@ $params = http_build_query([
     'client_id'     => $config['discord']['client_id'],
     'redirect_uri'  => $config['discord']['redirect_uri'],
     'response_type' => 'code',
-    'scope'         => 'identify',   // identity only — no email, keeps PII minimal
+    'scope'         => 'identify guilds.members.read', // identity + PD roles only, no email or server list
     'state'         => $state,
     'prompt'        => 'none',       // skip the consent screen for returning users
 ]);
