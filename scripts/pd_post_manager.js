@@ -8,6 +8,12 @@ function renderPost(post) {
     header.textContent = `${post.postDate} — ${post.postHeader}`;
     container.appendChild(header);
 
+    // Every gallery image in the post, in order, so the viewer can page through all of them.
+    const viewerImages = post.postBody
+        .filter(block => block.type === "gallery")
+        .flatMap(block => block.images || []);
+    let viewerIndex = 0;
+
     post.postBody.forEach(block => {
         if (block.type === "paragraph") {
             const p = document.createElement("p");
@@ -32,6 +38,21 @@ function renderPost(post) {
             audio.appendChild(source);
             audio.appendChild(document.createTextNode("Your browser does not support the audio element."));
             container.appendChild(audio);
+        } else if (block.type === "gallery") {
+            const gallery = document.createElement("div");
+            gallery.className = "gallery-container";
+            (block.images || []).forEach(image => {
+                const index = viewerIndex++;
+                const img = document.createElement("img");
+                img.className = "gallery-image";
+                img.src = image.src;
+                img.alt = image.caption || "";
+                img.title = image.caption || "";
+                img.loading = "lazy";
+                img.addEventListener("click", () => openImageViewer(viewerImages, index));
+                gallery.appendChild(img);
+            });
+            container.appendChild(gallery);
         }
     });
 

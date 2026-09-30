@@ -5,11 +5,14 @@
 
 // Extensionless on purpose: .htaccess 301s "*.php", and a redirected POST arrives as a GET.
 const PM_API = "/php/pd_posts_admin";
+const PM_UPLOAD_API = "/php/pd_upload_image";
+const PM_UPLOAD_MAX_BYTES = 8 * 1024 * 1024; // keep in sync with PD_UPLOAD_MAX_BYTES in pd_upload_image.php
 
 const PM_BLOCK_LABELS = {
     paragraph: "Paragraph",
     bulletList: "Bullet List (one item per line)",
-    audio: "Audio (.mp3 path on this site)"
+    audio: "Audio (.mp3 path on this site)",
+    gallery: "Gallery (one image per line: path | optional caption)"
 };
 
 const pm = {
@@ -63,7 +66,26 @@ async function pmApi(body) {
             body: JSON.stringify(body)
         };
 
-    const res = await fetch(PM_API, options);
+    return pmParse(await fetch(PM_API, options));
+}
+
+// Upload one image; resolves to its site path, e.g. "images/uploads/<id>/<random>.png".
+async function pmUploadImage(file) {
+    if (file.size > PM_UPLOAD_MAX_BYTES) {
+        throw new Error(`"${file.name}" is over 8 MB.`);
+    }
+
+    const form = new FormData();
+    form.append("image", file);
+    const data = await pmParse(await fetch(PM_UPLOAD_API, {
+        method: "POST",
+        headers: { "Accept": "application/json" },
+        body: form
+    }));
+    return data.src;
+}
+
+async function pmParse(res) {
     let data = null;
     try {
         data = await res.json();
@@ -248,6 +270,7 @@ function pmRenderBlocks() {
         wrapper.append(head);
 
         let input;
+        let extra = null;
         if (block.type === "audio") {
             input = pmEl("input", "input-field pm-input");
             input.type = "text";
@@ -257,6 +280,25 @@ function pmRenderBlocks() {
                 block.src = input.value.trim();
                 pmRenderPreview();
             });
+        } else if (block.type === "gallery") {
+            input = pmEl("textarea", "input-field pm-input pm-textarea");
+            input.placeholder = "images/news/example1.png | A caption\nimages/news/example2.png";
+            input.value = (block.images || [])
+                .map(image => image.caption ? `${image.src} | ${image.caption}` : image.src)
+                .join("\n");
+            input.addEventListener("input", () => {
+                block.images = input.value.split("\n")
+                    .filter(line => line.trim() !== "")
+                    .map(line => {
+                        const bar = line.indexOf("|");
+                        return bar === -1
+                            ? { src: line.trim() }
+                            : { src: line.slice(0, bar).trim(), caption: line.slice(bar + 1).trim() };
+                    });
+                pmRenderPreview();
+            });
+
+            extra = pmGalleryUploader(block);
         } else if (block.type === "bulletList") {
             input = pmEl("textarea", "input-field pm-input pm-textarea");
             input.value = (block.content || []).join("\n");
@@ -273,14 +315,58 @@ function pmRenderBlocks() {
             });
         }
         wrapper.append(input);
+        if (extra) wrapper.append(extra);
 
         holder.append(wrapper);
     });
 }
 
+// "Upload Images" button for a gallery block: uploads each picked file, then appends it.
+function pmGalleryUploader(block) {
+    const holder = pmEl("div", "setting-input-holder pm-add-row");
+
+    const picker = pmEl("input");
+    picker.type = "file";
+    picker.accept = "image/png,image/jpeg,image/gif,image/webp";
+    picker.multiple = true;
+    picker.style.display = "none";
+
+    const button = pmEl("button", "setting-button", "Upload Images");
+    button.addEventListener("click", () => picker.click());
+
+    picker.addEventListener("change", async () => {
+        const files = [...picker.files];
+        picker.value = "";
+        if (files.length === 0) return;
+
+        button.disabled = true;
+        let uploaded = 0;
+        try {
+            for (const file of files) {
+                pmStatus(`Uploading ${uploaded + 1} of ${files.length}…`);
+                const src = await pmUploadImage(file);
+                block.images = [...(block.images || []), { src }];
+                uploaded++;
+            }
+            pmStatus(`Uploaded ${uploaded} image${uploaded === 1 ? "" : "s"}. Remember to save the post.`);
+        } catch (err) {
+            pmError(err);
+        } finally {
+            button.disabled = false;
+            // Rebuild the blocks so the textarea lists whatever made it up.
+            pmRenderBlocks();
+            pmRenderPreview();
+        }
+    });
+
+    holder.append(button, picker);
+    return holder;
+}
+
 function pmAddBlock(type) {
     pm.draft.postBody.push(
         type === "audio" ? { type, src: "" }
+            : type === "gallery" ? { type, images: [] }
             : type === "bulletList" ? { type, content: [] }
             : { type, content: "" }
     );
@@ -338,7 +424,7 @@ document.addEventListener("DOMContentLoaded", function () {
     document.getElementById("pm-save").addEventListener("click", pmSave);
     document.getElementById("pm-delete").addEventListener("click", pmDelete);
 
-    ["paragraph", "bulletList", "audio"].forEach(type => {
+    ["paragraph", "bulletList", "audio", "gallery"].forEach(type => {
         document.getElementById(`pm-add-${type}`).addEventListener("click", () => pmAddBlock(type));
     });
 

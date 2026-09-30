@@ -22,6 +22,7 @@
 
         <script src="scripts/pd_post_manager.js" defer></script>
         <script src="scripts/pd_manage.js" defer></script>
+        <script src="scripts/pd_imageviewer.js" defer></script>
 
         <script src="scripts/pd_customization.js" defer></script>
         <script src="scripts/pd_discordauth.js"></script>
@@ -864,6 +865,7 @@
                                             <button id="pm-add-paragraph" class="setting-button">+ Paragraph</button>
                                             <button id="pm-add-bulletList" class="setting-button">+ Bullet List</button>
                                             <button id="pm-add-audio" class="setting-button">+ Audio</button>
+                                            <button id="pm-add-gallery" class="setting-button">+ Gallery</button>
                                         </div>
                                     </div>
 
@@ -897,6 +899,28 @@
             </footer>
             
             <script src="./scripts/version.js"></script>
+        </div>
+
+        <!-- Image viewer: opened by gallery blocks in news posts (scripts/pd_imageviewer.js). -->
+        <div id="iv-holder1" style="display: none;">
+            <div id="iv-holder2">
+                <div class="iv-topbar">
+                    <div id="iv-caption"></div>
+                    <div id="iv-counter"></div>
+                    <a id="iv-original" target="_blank" rel="noopener" title="Open original"></a>
+                    <button id="iv-close" title="Close"></button>
+                </div>
+
+                <div class="iv-viewport">
+                    <img id="iv-image" alt="">
+                    <button id="iv-prev" class="iv-arrow" title="Previous">‹</button>
+                    <button id="iv-next" class="iv-arrow" title="Next">›</button>
+                </div>
+
+                <div class="iv-nav1">
+                    <div id="iv-nav" class="iv-nav2"></div>
+                </div>
+            </div>
         </div>
 
         <div id="loading-holder">

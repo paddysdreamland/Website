@@ -119,6 +119,16 @@ function pd_news_admin_row(array $row): array {
     ];
 }
 
+/**
+ * A relative path to a file on this site with one of the given extensions (regex alternation).
+ * No scheme, host, "..", or "//", so it can't point off-site or climb out of the web root.
+ */
+function pd_news_valid_path(string $src, string $extensions): bool {
+    return (bool) preg_match('#^/?[A-Za-z0-9_\-./%]+\.(?:' . $extensions . ')$#i', $src)
+        && strpos($src, '..') === false
+        && strpos($src, '//') === false;
+}
+
 /** Validate an editor payload and return DB-ready values, or respond 422 and exit. */
 function pd_news_clean($p): array {
     if (!is_array($p)) {
@@ -175,10 +185,28 @@ function pd_news_clean($p): array {
         } elseif ($type === 'audio') {
             // Only MP3s hosted on this site (the renderer hard-codes audio/mpeg).
             $src = trim((string) ($block['src'] ?? ''));
-            if (!preg_match('#^/?[A-Za-z0-9_\-./%]+\.mp3$#i', $src) || strpos($src, '..') !== false || strpos($src, '//') !== false) {
+            if (!pd_news_valid_path($src, 'mp3')) {
                 pd_json_error(422, 'invalid', "Block {$n}: audio must be an .mp3 path on this site.");
             }
             $blocks[] = ['type' => 'audio', 'src' => $src];
+        } elseif ($type === 'gallery') {
+            // Images hosted on this site; captions are rendered as plain text (textContent/alt).
+            $images = [];
+            foreach ((array) ($block['images'] ?? []) as $image) {
+                $src     = trim((string) (is_array($image) ? ($image['src'] ?? '') : ''));
+                $caption = trim((string) (is_array($image) ? ($image['caption'] ?? '') : ''));
+                if (!pd_news_valid_path($src, 'png|jpe?g|gif|webp')) {
+                    pd_json_error(422, 'invalid', "Block {$n}: gallery images must be .png, .jpg, .gif or .webp paths on this site.");
+                }
+                if (strlen($caption) > 255) {
+                    pd_json_error(422, 'invalid', "Block {$n}: captions are limited to 255 characters.");
+                }
+                $images[] = $caption === '' ? ['src' => $src] : ['src' => $src, 'caption' => $caption];
+            }
+            if (!$images || count($images) > 50) {
+                pd_json_error(422, 'invalid', "Block {$n}: a gallery needs between 1 and 50 images.");
+            }
+            $blocks[] = ['type' => 'gallery', 'images' => $images];
         } else {
             pd_json_error(422, 'invalid', "Block {$n}: unknown block type.");
         }

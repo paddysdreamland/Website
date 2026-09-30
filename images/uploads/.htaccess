@@ -1,0 +1,24 @@
+# images/uploads/.htaccess  —  images uploaded through php/pd_upload_image.php.
+# Nothing in here (or in the per-user folders below) may ever run as code
+# or be served as anything but an image.
+
+Options -Indexes
+
+# Deny everything, then allow only the names the uploader generates.
+<FilesMatch ".">
+    Require all denied
+</FilesMatch>
+<FilesMatch "^[a-f0-9]{24}\.(png|jpg|gif|webp)$">
+    Require all granted
+</FilesMatch>
+
+# Never hand anything in here to PHP or CGI, even if a script somehow got in.
+RemoveHandler .php .phtml .phar .php3 .php4 .php5 .php7 .php8 .pl .py .cgi .shtml
+RemoveType .php .phtml .phar
+
+<IfModule mod_headers.c>
+    # Browsers must trust the image Content-Type and never sniff a file as HTML;
+    # opening one directly gets a sandboxed, script-free page.
+    Header set X-Content-Type-Options "nosniff"
+    Header set Content-Security-Policy "default-src 'none'; img-src 'self'; style-src 'unsafe-inline'; sandbox"
+</IfModule>
