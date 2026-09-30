@@ -129,6 +129,17 @@ function pd_news_valid_path(string $src, string $extensions): bool {
         && strpos($src, '//') === false;
 }
 
+/**
+ * Whether a (valid) site path points at a real file. Posts must never reference missing
+ * files: each one is a 404 on every page view, and php/pd_log.php bans any IP that hits
+ * 4 of those in 4 seconds, which would ban visitors just for opening the News page.
+ */
+function pd_news_file_exists(string $src): bool {
+    $decoded = rawurldecode($src);
+    return strpos($decoded, '..') === false
+        && is_file(dirname(__DIR__) . '/' . ltrim($decoded, '/'));
+}
+
 /** Validate an editor payload and return DB-ready values, or respond 422 and exit. */
 function pd_news_clean($p): array {
     if (!is_array($p)) {
@@ -188,6 +199,9 @@ function pd_news_clean($p): array {
             if (!pd_news_valid_path($src, 'mp3')) {
                 pd_json_error(422, 'invalid', "Block {$n}: audio must be an .mp3 path on this site.");
             }
+            if (!pd_news_file_exists($src)) {
+                pd_json_error(422, 'invalid', "Block {$n}: \"{$src}\" does not exist on the site.");
+            }
             $blocks[] = ['type' => 'audio', 'src' => $src];
         } elseif ($type === 'gallery') {
             // Images hosted on this site; captions are rendered as plain text (textContent/alt).
@@ -197,6 +211,9 @@ function pd_news_clean($p): array {
                 $caption = trim((string) (is_array($image) ? ($image['caption'] ?? '') : ''));
                 if (!pd_news_valid_path($src, 'png|jpe?g|gif|webp')) {
                     pd_json_error(422, 'invalid', "Block {$n}: gallery images must be .png, .jpg, .gif or .webp paths on this site.");
+                }
+                if (!pd_news_file_exists($src)) {
+                    pd_json_error(422, 'invalid', "Block {$n}: \"{$src}\" does not exist on the site.");
                 }
                 if (strlen($caption) > 255) {
                     pd_json_error(422, 'invalid', "Block {$n}: captions are limited to 255 characters.");

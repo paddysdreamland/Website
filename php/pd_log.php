@@ -7,8 +7,8 @@ const PD_OFFSITE_FETCH = ['cross-site', 'same-site'];
 function pd_log_hit(): void {
     try {
         pd_pdo()->prepare(
-            "INSERT INTO pd_access_log (ip, method, uri, user_agent, referer, fetch_site, status)
-             VALUES (?,?,?,?,?,?,?)"
+            "INSERT INTO pd_access_log (ip, method, uri, user_agent, referer, fetch_site, fetch_mode, status)
+             VALUES (?,?,?,?,?,?,?,?)"
         )->execute([
             $_SERVER['REMOTE_ADDR']    ?? '',
             $_SERVER['REQUEST_METHOD'] ?? '',
@@ -16,9 +16,35 @@ function pd_log_hit(): void {
             substr($_SERVER['HTTP_USER_AGENT']    ?? '', 0, 512) ?: null,
             substr($_SERVER['HTTP_REFERER']       ?? '', 0, 512) ?: null,
             substr($_SERVER['HTTP_SEC_FETCH_SITE'] ?? '', 0, 20) ?: null,
+            substr($_SERVER['HTTP_SEC_FETCH_MODE'] ?? '', 0, 20) ?: null,
             http_response_code() ?: null,
         ]);
     } catch (Throwable $e) { /* logging must never break the page */ }
+}
+
+/**
+ * Whether this request comes from a logged-in Founder or Manager. Same database as the
+ * Discord login: the pd_session cookie is a random token checked against its stored
+ * hash, so it can't be forged. site_roles is only ever filled with PD staff roles.
+ */
+function pd_is_staff(PDO $pdo): bool {
+    static $staff = null;
+    if ($staff !== null) return $staff;
+
+    $token = $_COOKIE['pd_session'] ?? '';
+    if (!is_string($token) || $token === '') return $staff = false;
+
+    try {
+        $stmt = $pdo->prepare(
+            "SELECT 1 FROM pd_sessions s
+               JOIN pd_users u ON u.discord_id = s.discord_id
+              WHERE s.token_hash = ? AND s.expires_at > NOW() AND u.site_roles <> ''
+              LIMIT 1");
+        $stmt->execute([hash('sha256', $token)]);
+        return $staff = (bool) $stmt->fetchColumn();
+    } catch (Throwable $e) {
+        return $staff = false;
+    }
 }
 
 function pd_bomb_armed(): bool {
@@ -54,6 +80,12 @@ function pd_guard(): void {
     $pdo = pd_pdo();
     $ip  = $_SERVER['REMOTE_ADDR'] ?? '';
     $uri = $_SERVER['REQUEST_URI'] ?? '';
+
+    // Staff are logged but never blocked or auto-banned (also a way back in if their IP was).
+    if (pd_is_staff($pdo)) {
+        pd_log_hit();
+        return;
+    }
 
     $ban = $pdo->prepare(
         "SELECT 1 FROM pd_blocklist
@@ -120,10 +152,14 @@ function pd_guard(): void {
         http_response_code(403); exit;
     }
 
+    // Burst and scan only count page loads. A browser fetching a page's images/audio sends
+    // Sec-Fetch-Mode no-cors/cors; a missing file there is a broken page, not a scan.
+    // Bots send no Sec-Fetch-* headers at all (NULL), so they still count.
     $burst = $pdo->prepare(
         "SELECT COUNT(*) FROM pd_access_log
          WHERE ip = ? AND created_at > (NOW() - INTERVAL 20 SECOND)
-           AND (fetch_site IS NULL OR fetch_site NOT IN ('cross-site','same-site'))");
+           AND (fetch_site IS NULL OR fetch_site NOT IN ('cross-site','same-site'))
+           AND (fetch_mode IS NULL OR fetch_mode = 'navigate')");
     $burst->execute([$ip]);
     if ((int)$burst->fetchColumn() > 8) {
         $pdo->prepare(
@@ -138,7 +174,8 @@ function pd_guard(): void {
         "SELECT COUNT(*) FROM pd_access_log
          WHERE ip = ? AND status = 404
            AND created_at > (NOW() - INTERVAL 4 SECOND)
-           AND (fetch_site IS NULL OR fetch_site NOT IN ('cross-site','same-site'))");
+           AND (fetch_site IS NULL OR fetch_site NOT IN ('cross-site','same-site'))
+           AND (fetch_mode IS NULL OR fetch_mode = 'navigate')");
     $miss->execute([$ip]);
     if ((int)$miss->fetchColumn() >= 4) {
         $pdo->prepare(

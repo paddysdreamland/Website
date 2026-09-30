@@ -21,7 +21,9 @@ const pm = {
     posts: [],
     draft: null,      // the post being edited, in the editor/API shape
     isNew: false,
-    keyTouched: false // stop auto-generating the key once it's been typed in
+    keyTouched: false, // stop auto-generating the key once it's been typed in
+    previewTimer: 0,
+    missingPaths: new Set() // media paths that 404'd once; never requested again (see pmPreviewDraft)
 };
 
 function pmCan(permission) {
@@ -278,7 +280,7 @@ function pmRenderBlocks() {
             input.value = block.src || "";
             input.addEventListener("input", () => {
                 block.src = input.value.trim();
-                pmRenderPreview();
+                pmRenderPreviewSoon();
             });
         } else if (block.type === "gallery") {
             input = pmEl("textarea", "input-field pm-input pm-textarea");
@@ -295,7 +297,7 @@ function pmRenderBlocks() {
                             ? { src: line.trim() }
                             : { src: line.slice(0, bar).trim(), caption: line.slice(bar + 1).trim() };
                     });
-                pmRenderPreview();
+                pmRenderPreviewSoon();
             });
 
             extra = pmGalleryUploader(block);
@@ -375,6 +377,7 @@ function pmAddBlock(type) {
 }
 
 function pmRenderPreview() {
+    clearTimeout(pm.previewTimer);
     const holder = document.getElementById("pm-preview");
     holder.replaceChildren();
     if (!pm.draft) return;
@@ -382,7 +385,45 @@ function pmRenderPreview() {
     // Same renderer as the public News page (pd_post_manager.js). Unsaved text is only
     // rendered in your own browser; the server sanitizes it on save, and the editor
     // reloads the stored version so you see exactly what visitors will.
-    holder.append(renderPost({ ...pm.draft, postDate: pmFormatDate(pm.draft.postDate) }));
+    holder.append(renderPost(pmPreviewDraft()));
+
+    // Remember anything that 404s so later redraws don't request it again.
+    holder.querySelectorAll("img, source").forEach(el => {
+        el.addEventListener("error", () => {
+            const src = el.getAttribute("src");
+            if (pm.missingPaths.has(src)) return;
+            pm.missingPaths.add(src);
+            pmStatus(`Couldn't find "${src}" on the site. Check the path, or upload it.`, "error");
+            pmRenderPreviewSoon();
+        }, { once: true });
+    });
+}
+
+// For typing in media paths: wait until the typing stops before redrawing.
+function pmRenderPreviewSoon() {
+    clearTimeout(pm.previewTimer);
+    pm.previewTimer = setTimeout(pmRenderPreview, 600);
+}
+
+// Same rule as pd_news_valid_path() in pd_posts_admin.php, minus paths already known to 404.
+function pmValidPath(src, extensions) {
+    return new RegExp(`^/?[A-Za-z0-9_\\-./%]+\\.(?:${extensions})$`, "i").test(src || "")
+        && !src.includes("..") && !src.includes("//")
+        && !pm.missingPaths.has(src);
+}
+
+// The draft as the preview draws it: media only for paths the server would accept.
+// Every half-typed path would be a 404, and the site guard (php/pd_log.php) bans an
+// IP for 7 days after 4 of those in 4 seconds, so they must never be requested.
+function pmPreviewDraft() {
+    const body = pm.draft.postBody
+        .map(block => block.type === "gallery"
+            ? { ...block, images: (block.images || []).filter(image => pmValidPath(image.src, "png|jpe?g|gif|webp")) }
+            : block)
+        .filter(block => !(block.type === "audio" && !pmValidPath(block.src, "mp3")))
+        .filter(block => !(block.type === "gallery" && block.images.length === 0));
+
+    return { ...pm.draft, postDate: pmFormatDate(pm.draft.postDate), postBody: body };
 }
 
 async function pmSave() {
