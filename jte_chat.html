@@ -25,12 +25,14 @@
     <body style="background-color: transparent">
         <!-- Two slots so the slideshow can crossfade: one holds the picture on
              screen, the other loads the next one behind it, then they swap. -->
-        <div id="wallpaper-holder">
-            <div class="slide is-front"></div>
-            <div class="slide"></div>
-        </div>
-        <div id="chat-anchor" class="wrapper-bl fullscreen">
-            <div id="chat-wrapper" class="chat-wrapper-reverse fullscreen">
+        
+        <div id="chat-anchor" class="">
+            <div id="wallpaper-holder">
+                <div class="slide is-front"></div>
+                <div class="slide"></div>
+            </div>
+            
+            <div id="chat-wrapper" class="chat-wrapper">
                 <!-- Twitch and YouTube messages will appear here. -->
                 <!-- Don't forget the helper script to bridge YouTube's chat. -->
             </div>

@@ -201,6 +201,59 @@ document.addEventListener("DOMContentLoaded", () => {
     //                     flies in from off the left edge. overflow stays visible.
     // max-height is measured per message (not a fixed 9999px) so the open
     // animates over the full duration instead of snapping.
+    // A Range's bounding rect spans only the rendered line boxes, so its width
+    // is the longest line after wrapping.
+    // Every wrapping text block a message can have: chat and log content, and
+    // the single line of a presence event.
+    const FIT_SELECTOR = ".msg-content, .presence-text";
+
+    function shrinkToLines(el) {
+        el.style.width = "";
+        const range = document.createRange();
+        range.selectNodeContents(el);
+        const w = range.getBoundingClientRect().width;
+        if (w > 0 && w < el.clientWidth) el.style.width = Math.ceil(w) + "px";
+    }
+
+    // The width shrinkToLines pins is only right for the wrapper width it was
+    // measured at. A layer switch (#layers=desktoponly takes the chat from
+    // 100vw to 384px) or an OBS source resize changes where every line wraps,
+    // so re-fit everything already on screen. Same logic as shrinkToLines, but
+    // in batched passes - clear all, measure all, set all - so 40 messages cost
+    // one reflow rather than 40.
+    function reshrinkAll() {
+        const els = [...chatWrapper.querySelectorAll(FIT_SELECTOR)];
+        els.forEach(el => el.style.width = "");
+        const widths = els.map(el => {
+            const range = document.createRange();
+            range.selectNodeContents(el);
+            return [range.getBoundingClientRect().width, el.clientWidth];
+        });
+        els.forEach((el, i) => {
+            const [w, full] = widths[i];
+            if (w > 0 && w < full) el.style.width = Math.ceil(w) + "px";
+        });
+
+        // Slots still mid-open are heading for a height measured at the old
+        // width - re-aim them. Finished ones have no cap left to fix.
+        chatWrapper.querySelectorAll(".msg-slot").forEach(slot => {
+            if (slot.style.maxHeight === "none") return;
+            const h = slot.querySelector(".msg-slot-inner > *")?.offsetHeight;
+            if (h > 0) slot.style.setProperty("--open-h", h + "px");
+        });
+    }
+
+    // Width only: height changes every time a message comes in, and the
+    // wrapper's own width never depends on its children (it's 100vw or a
+    // layer's fixed size), so re-fitting can't feed back into another resize.
+    let lastChatWidth = chatWrapper.clientWidth;
+    new ResizeObserver(() => {
+        const w = chatWrapper.clientWidth;
+        if (w === lastChatWidth) return;
+        lastChatWidth = w;
+        reshrinkAll();
+    }).observe(chatWrapper);
+
     function appendToChat(wrapper) {
         const slot = document.createElement("div");
         slot.classList.add("msg-slot");
@@ -211,15 +264,29 @@ document.addEventListener("DOMContentLoaded", () => {
         slot.appendChild(inner);
         chatWrapper.prepend(slot);
 
+        // Wrapped text leaves the wrapper at full available width, not the
+        // longest line's — clamp each content block to its rendered lines.
+        wrapper.querySelectorAll(FIT_SELECTOR).forEach(el => {
+            shrinkToLines(el);
+            // Emotes have no width until loaded, so re-measure once they arrive.
+            el.querySelectorAll("img").forEach(img => {
+                if (!img.complete) img.addEventListener("load", () => shrinkToLines(el), { once: true });
+            });
+        });
+
         // Read the assembled message's natural height (forces layout) and feed
         // it to the open. overflow is visible, so this is unaffected by max-height.
         const h = wrapper.offsetHeight;
         if (h > 0) slot.style.setProperty("--open-h", h + "px");
 
         // Once the open finishes, drop the cap so the row tracks natural height
-        // (guards against any later reflow being clipped by a stale max-height).
+        // (guards against any later reflow being clipped by a stale max-height,
+        // e.g. a narrower wrapper making the message wrap onto more lines).
+        // The animation itself has to go: a "forwards" fill outranks inline
+        // styles in the cascade, so max-height:none alone would never apply.
         slot.addEventListener("animationend", function done(e) {
             if (e.animationName === "slot-open") {
+                slot.style.animation = "none";
                 slot.style.maxHeight = "none";
                 slot.removeEventListener("animationend", done);
             }

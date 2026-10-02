@@ -16,7 +16,7 @@
 .wrapper-bl,
 .wrapper-bc,
 .wrapper-br {
-    filter: drop-shadow(0px 0px 16px black);
+    
 }
 
 .wrapper-tl {
@@ -26,6 +26,7 @@
 
 .wrapper-bl {
     position: fixed; left: 0px; bottom: 0px;
+    padding: var(--wrapper-padding);
 }
 
 .wrapper-bc {
@@ -49,15 +50,11 @@
 }
 
 .chat-wrapper {
-    padding: var(--wrapper-padding);
-    display: flex; flex-direction: column-reverse;
-    align-items: flex-start; gap: 4px;
-}
-
-.chat-wrapper-reverse {
+    width: 100vw; height: 100vh;
     padding: var(--wrapper-padding);
     display: flex; flex-direction: column;
     align-items: flex-start; gap: 4px;
+    filter: drop-shadow(0px 0px 8px rgba(0, 0, 0, 0.5));
 }
 
 .msg-wrapper,
@@ -153,6 +150,16 @@
     font-size: 16px;
     min-height: 20px;
     filter: var(--msg-drop-shadow);
+}
+
+/* Links and long unspaced strings have no break point, so the message can't
+   get narrower than the whole word and spills past the chat's edge. "anywhere"
+   (not "break-word") is the one that also lowers the min-content width, which
+   is what lets the flex chain shrink the message to fit. Spaced text still
+   breaks at spaces first. */
+.msg-content,
+.presence-text {
+    overflow-wrap: anywhere;
 }
 
 .msg-author {
@@ -357,6 +364,11 @@
 }
 
 /* ─── Misc widget ───────────────────────────────────────────────────── */
+#misc-anchor {
+    padding: 24px;
+    filter: drop-shadow(0px 0px 8px rgba(0, 0, 0, 0.5));
+}
+
 .misc-wrapper {
     background: linear-gradient(
         to left,
@@ -483,6 +495,11 @@
 }
 
 /* ─── Toast Widget ──────────────────────────────────────────────────── */
+#toast-anchor {
+    padding: 24px;
+    filter: drop-shadow(0px 0px 8px rgba(0, 0, 0, 0.5));
+}
+
 .toast-wrapper {
     background: linear-gradient(
         to right,
@@ -519,7 +536,7 @@
 }
 
 .toast-wrapper[data-state="playing"] {
-
+    
 }
 
 .toast-wrapper[data-state="paused"] {

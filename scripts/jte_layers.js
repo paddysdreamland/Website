@@ -22,7 +22,17 @@
 // not, and it costs nothing to stay on the tested path.
 
 // ─── Layer table ──────────────────────────────────────────────────────────
-// layer name -> { "element-id": "class class ...", ... }
+// layer name -> { "selector": "class class ...", ... }
+//
+// The key is a CSS selector, so it reads the way a stylesheet would:
+//   "#chat-anchor"  the element with that id
+//   ".message"      every element with that class
+//   "body"          every element of that tag
+// A selector that matches several elements puts the classes on all of them.
+// It is matched once per pass, though - an element created AFTER the hash
+// last changed (a new chat message, say) won't pick the class up. For
+// anything that churns like that, put the class on a stable container and
+// let CSS reach the children through it.
 //
 // The elements are expected to already be in the page, hidden or shown by
 // default in CSS. All this does is add a class to them. Classes are ADDED to
@@ -38,13 +48,23 @@
 // surface, which on the s&box panel means a full-texture upload every frame in
 // scenes that do not even show it. <video> is the exception to all of it: it
 // keeps decoding while hidden, so pause it explicitly rather than trusting CSS.
+
 const LAYERS = {
     // The base content. Nothing to switch on - the chat is simply always there
     // - but "#layers=chat" is the recommended spelling for a plain scene, so it
     // has to be a layer the table knows about or every load warns about it.
-    chat: {},
+    buffer: {
+        "body": "body-buffer",
+        "#chat-anchor": "anchor-buffer",
+        "#wallpaper-holder": "active buffer",
+        "#chat-wrapper": "chat-buffer",
+    },
+    desktoponly: {
+        "#chat-anchor": "anchor-desktoponly",
+        "#chat-wrapper": "chat-desktoponly",
+    },
     wallpaper: {
-        "wallpaper-holder": "active",
+        "#wallpaper-holder": "active",
     },
 };
 
@@ -90,18 +110,29 @@ function applyLayers() {
             continue;
         }
 
-        for (const [id, cls] of Object.entries(def)) {
-            const el = document.getElementById(id);
-            if (!el) {
-                console.warn(`Layer "${name}": no element #${id} to put "${cls}" on.`);
+        for (const [selector, cls] of Object.entries(def)) {
+            // querySelectorAll throws on a malformed selector. Caught so one
+            // bad entry costs only itself, not the rest of the layer.
+            let els;
+            try {
+                els = document.querySelectorAll(selector);
+            } catch {
+                console.warn(`Layer "${name}": "${selector}" is not a valid selector.`);
+                continue;
+            }
+            if (!els.length) {
+                console.warn(`Layer "${name}": nothing matches ${selector} to put "${cls}" on.`);
                 continue;
             }
 
             // Split so an entry may name more than one class; classList throws
             // on a string containing a space rather than splitting it.
-            for (const one of cls.split(/\s+/).filter(Boolean)) {
-                el.classList.add(one);
-                applied.push([el, one]);
+            const classes = cls.split(/\s+/).filter(Boolean);
+            for (const el of els) {
+                for (const one of classes) {
+                    el.classList.add(one);
+                    applied.push([el, one]);
+                }
             }
         }
     }
